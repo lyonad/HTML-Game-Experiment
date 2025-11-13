@@ -354,8 +354,8 @@ shopItems.push(
         { id: 'ef_orbit_lines', type: 'effects', name: 'Orbit Lines', desc: 'Lines orbiting the player', price: 200, purchased: false, effectSpec: { type: 'orbit', color: '#ffd54f', rings: 2, perRing: 6, radii: [12, 26], speed: 0.03, lineLength: 12, thickness: 2 }, appliesTo: ['run','jump'] },
         { id: 'ef_shock_runner', type: 'effects', name: 'Shock Ripples', desc: 'Subtle ground ripples', price: 120, purchased: false, effectSpec: { type: 'shock', color: 'rgba(160,200,255,0.6)', count: 2, radius: 12, life: 30 }, appliesTo: ['run','jump'] },
         { id: 'ef_smoke_trail', type: 'effects', name: 'Smoke Trail', desc: 'Small smoke puffs', price: 90, purchased: false, effectSpec: { type: 'smoke', color: 'rgba(120,120,120,0.6)', count: 2, life: 50, size: 8, freq: 8 }, appliesTo: ['run','jump'] },
-        { id: 'ef_burst_jump', type: 'effects', name: 'Jump Burst', desc: 'Burst of particles', price: 150, purchased: false, effectSpec: { type: 'burst', color: '#ff8a65', count: 20, spread: 220, speed: 2.0, life: 45 }, appliesTo: ['run','jump'] },
-        { id: 'ef_confetti_jump', type: 'effects', name: 'Confetti', desc: 'Colorful confetti', price: 180, purchased: false, effectSpec: { type: 'confetti', colors: ['#ffd54f','#ff8a65','#4dd0e1','#ff6bcb'], count: 20, size: 6, life: 60, speed: 2.4 }, appliesTo: ['run','jump'] },
+        { id: 'ef_burst_jump', type: 'effects', name: 'Jump Burst', desc: 'Burst of particles', price: 150, purchased: false, effectSpec: { type: 'burst', color: '#ff8a65', count: 20, spread: 220, speed: 2.0, life: 45, freq: 40 }, appliesTo: ['run','jump'] },
+        { id: 'ef_confetti_jump', type: 'effects', name: 'Confetti', desc: 'Colorful confetti', price: 180, purchased: false, effectSpec: { type: 'confetti', colors: ['#ffd54f','#ff8a65','#4dd0e1','#ff6bcb'], count: 20, size: 6, life: 60, speed: 2.4, freq: 50 }, appliesTo: ['run','jump'] },
         { id: 'ef_halo', type: 'effects', name: 'Glow Halo', desc: 'Pulsing ring', price: 160, purchased: false, effectSpec: { type: 'halo', color: '#7f00ff', radius: 18, life: 40, freq: 40 }, appliesTo: ['run','jump'] },
         { id: 'ef_gold_sparkle', type: 'effects', name: 'Gold Sparkle', desc: 'Gold sparkles', price: 220, purchased: false, effectSpec: { type: 'sparkle', color: '#ffd166', count: 6, size: 4, life: 50, freq: 20 }, appliesTo: ['run','jump'] }
         );
@@ -587,6 +587,29 @@ function maybeSpawnMoveEffect() {
         case 'halo':
             // draw a soft pulse via a large translucent particle
             spawnParticle(px, py - 6, 0, 0, spec.life || 40, spec.radius || 22, spec.color || 'rgba(127,0,255,0.2)');
+            break;
+        case 'burst':
+            // smaller bursts while running (jump has bigger burst)
+            {
+                const runCount = Math.max(2, Math.round((spec.count || 8) * 0.35));
+                for (let i = 0; i < runCount; i++) {
+                    const ang = -Math.PI/2 + (Math.random() - 0.5) * (Math.PI * 2);
+                    const speed = (spec.speed || 2) * (0.5 + Math.random() * 0.8);
+                    spawnParticle(px + (Math.random() - 0.5) * 6, py, Math.cos(ang) * speed, Math.sin(ang) * speed, spec.life || 30, spec.size || 4, spec.color || '#fff');
+                }
+            }
+            break;
+        case 'confetti':
+            // fewer confetti pieces while running
+            {
+                const runCount = Math.max(2, Math.round((spec.count || 12) * 0.25));
+                for (let i = 0; i < runCount; i++) {
+                    const col = spec.colors ? spec.colors[Math.floor(Math.random() * spec.colors.length)] : '#fff';
+                    const vx = (Math.random() - 0.5) * (spec.speed || 2);
+                    const vy = -0.6 - Math.random() * 1.2;
+                    spawnParticle(px + (Math.random() - 0.5) * 12, py, vx, vy, spec.life || 50, spec.size || 4, col);
+                }
+            }
             break;
         default:
             // generic fallback
