@@ -206,6 +206,7 @@ function checkFoodCollision() {
             foods.splice(i, 1);
             score += 10;
             scoreElement.textContent = `Point: ${score}`;
+            saveProgress();
             generateFood();
         }
     }
@@ -252,6 +253,55 @@ const selectedSkins = {
     background: 'bg_classic',
     platform: 'plat_classic'
 };
+
+// --- Save / Load progress ---
+function getSaveData() {
+    return {
+        score: score,
+        selectedSkins: selectedSkins,
+        purchases: shopItems.reduce((acc, it) => { acc[it.id] = !!it.purchased; return acc; }, {}),
+        colors: { playerColor, platformColor, bgColor }
+    };
+}
+
+function saveProgress() {
+    try {
+        const data = getSaveData();
+        localStorage.setItem('htmlGameSave', JSON.stringify(data));
+    } catch (e) {
+        console.error('Save failed', e);
+    }
+}
+
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem('htmlGameSave');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (typeof data.score === 'number') score = data.score;
+        if (data.purchases) {
+            for (let it of shopItems) {
+                if (data.purchases.hasOwnProperty(it.id)) it.purchased = !!data.purchases[it.id];
+            }
+        }
+        if (data.selectedSkins) {
+            for (let k in data.selectedSkins) if (data.selectedSkins[k]) selectedSkins[k] = data.selectedSkins[k];
+        }
+        if (data.colors) {
+            if (data.colors.playerColor) playerColor = data.colors.playerColor;
+            if (data.colors.platformColor) platformColor = data.colors.platformColor;
+            if (data.colors.bgColor) bgColor = data.colors.bgColor;
+        }
+        scoreElement.textContent = `Point: ${score}`;
+        return true;
+    } catch (e) {
+        console.error('Load failed', e);
+        return false;
+    }
+}
+
+// Auto-save every 5 seconds
+setInterval(saveProgress, 5000);
 
 // current shop page (0 = player, 1 = background, 2 = platform)
 let currentShopPage = 0;
@@ -336,12 +386,14 @@ function renderShop() {
                     selectedSkins[category] = item.id;
                     applySkinByCategory(category, item.color);
                     scoreElement.textContent = `Point: ${score}`;
+                    saveProgress();
                     renderShop();
                 }
             } else {
                 // select purchased skin
                 selectedSkins[category] = item.id;
                 applySkinByCategory(category, item.color);
+                saveProgress();
                 renderShop();
             }
         });
@@ -361,7 +413,12 @@ function applySelectedSkins() {
     }
 }
 
+// Load any saved progress from previous sessions (then apply skins)
+loadProgress();
 applySelectedSkins();
+
+// Save when leaving the page
+window.addEventListener('beforeunload', saveProgress);
 
 function openShop() {
     renderShop();
@@ -391,7 +448,7 @@ function gameLoop() {
 
     // Update food animations
     for (let food of foods) {
-        food.bounceTime += 0.05;
+        food.bounceTime += 0.1;
     }
 
     drawGame();
