@@ -338,19 +338,28 @@ shopItems.push(
     { id: 'pt_gold', type: 'points', name: 'Point Gold', desc: 'Premium gold point', price: 300, purchased: false, color: '#ffd166' }
 );
 
-// Effects: visual effects for idle and jump
-shopItems.push(
-    { id: 'ef_none', type: 'effects', name: 'No Effect', desc: 'No special effects', price: 0, purchased: true, appliesTo: ['idle','jump'], effectSpec: { type: 'none' } },
-    { id: 'ef_sparkle', type: 'effects', name: 'Sparkle', desc: 'Tiny long-lived sparkles', price: 40, purchased: false, effectSpec: { type: 'sparkle', color: '#fff7c0', count: 3, life: 60, spread: 10, freq: 24 }, appliesTo: ['idle'] },
-    { id: 'ef_aura', type: 'effects', name: 'Aura', desc: 'Soft colored aura when moving', price: 80, purchased: false, effectSpec: { type: 'aura', color: '#b388ff', radius: 22, alpha: 0.18, freq: 30 }, appliesTo: ['idle'] },
-    { id: 'ef_trail', type: 'effects', name: 'Trail', desc: 'Smooth trailing glows while moving', price: 120, purchased: false, effectSpec: { type: 'trail', color: '#80deea', count: 6, life: 40, spacing: 6, freq: 6 }, appliesTo: ['idle','jump'] },
-    { id: 'ef_burst_jump', type: 'effects', name: 'Jump Burst', desc: 'Burst of particles on jump', price: 150, purchased: false, effectSpec: { type: 'burst', color: '#ff8a65', count: 18, spread: 180, speed: 1.6, life: 40 }, appliesTo: ['jump'] },
-    // new orbiting-lines (atom-like) effect
-    { id: 'ef_orbit', type: 'effects', name: 'Orbit Lines', desc: 'Lines orbiting the player like an atom', price: 200, purchased: false, effectSpec: { type: 'orbit', color: '#ffd54f', rings: 2, perRing: 6, radii: [12, 26], speed: 0.02, lineLength: 10, thickness: 2 }, appliesTo: ['idle','jump'] },
-    { id: 'ef_burst_big', type: 'effects', name: 'Burst', desc: 'Big burst on jump', price: 200, purchased: false, effectSpec: { type: 'burst', color: '#ffe29a', count: 14, size: 5, life: 40, speed: 3 }, appliesTo: ['jump'] },
-    { id: 'ef_neonhalo', type: 'effects', name: 'Neon Halo', desc: 'Bright neon halo idle & jump', price: 240, purchased: false, effectSpec: { type: 'halo', color: '#7f00ff', count: 5, size: 6, life: 40, speed: 1.0, freq: 22 }, appliesTo: ['idle','jump'] },
-    { id: 'ef_golddust', type: 'effects', name: 'Gold Dust', desc: 'Sparkling gold particles', price: 300, purchased: false, effectSpec: { type: 'sparkle', color: '#ffd166', count: 6, size: 4, life: 40, speed: 1.6, freq: 18 }, appliesTo: ['idle','jump'] }
-);
+// Effects are added below via a normalization IIFE (run/jump-only set)
+
+// Replace existing 'effects' entries with a normalized, unique set
+// This helps ensure there are no duplicate ids and all effects are distinct.
+(() => {
+    // remove any existing effect entries in-place
+    for (let i = shopItems.length - 1; i >= 0; i--) {
+        if (shopItems[i].type === 'effects') shopItems.splice(i, 1);
+    }
+    // push a fresh set of unique effects (run/jump only)
+    shopItems.push(
+        { id: 'ef_none', type: 'effects', name: 'No Effect', desc: 'No special effects', price: 0, purchased: true, appliesTo: ['run','jump'], effectSpec: { type: 'none' } },
+        { id: 'ef_trail_glow', type: 'effects', name: 'Trail Glow', desc: 'Soft glowing trail', price: 80, purchased: false, effectSpec: { type: 'trail', color: '#80deea', count: 6, life: 50, spacing: 6, freq: 4 }, appliesTo: ['run','jump'] },
+        { id: 'ef_orbit_lines', type: 'effects', name: 'Orbit Lines', desc: 'Lines orbiting the player', price: 200, purchased: false, effectSpec: { type: 'orbit', color: '#ffd54f', rings: 2, perRing: 6, radii: [12, 26], speed: 0.03, lineLength: 12, thickness: 2 }, appliesTo: ['run','jump'] },
+        { id: 'ef_shock_runner', type: 'effects', name: 'Shock Ripples', desc: 'Subtle ground ripples', price: 120, purchased: false, effectSpec: { type: 'shock', color: 'rgba(160,200,255,0.6)', count: 2, radius: 12, life: 30 }, appliesTo: ['run','jump'] },
+        { id: 'ef_smoke_trail', type: 'effects', name: 'Smoke Trail', desc: 'Small smoke puffs', price: 90, purchased: false, effectSpec: { type: 'smoke', color: 'rgba(120,120,120,0.6)', count: 2, life: 50, size: 8, freq: 8 }, appliesTo: ['run','jump'] },
+        { id: 'ef_burst_jump', type: 'effects', name: 'Jump Burst', desc: 'Burst of particles', price: 150, purchased: false, effectSpec: { type: 'burst', color: '#ff8a65', count: 20, spread: 220, speed: 2.0, life: 45 }, appliesTo: ['run','jump'] },
+        { id: 'ef_confetti_jump', type: 'effects', name: 'Confetti', desc: 'Colorful confetti', price: 180, purchased: false, effectSpec: { type: 'confetti', colors: ['#ffd54f','#ff8a65','#4dd0e1','#ff6bcb'], count: 20, size: 6, life: 60, speed: 2.4 }, appliesTo: ['run','jump'] },
+        { id: 'ef_halo', type: 'effects', name: 'Glow Halo', desc: 'Pulsing ring', price: 160, purchased: false, effectSpec: { type: 'halo', color: '#7f00ff', radius: 18, life: 40, freq: 40 }, appliesTo: ['run','jump'] },
+        { id: 'ef_gold_sparkle', type: 'effects', name: 'Gold Sparkle', desc: 'Gold sparkles', price: 220, purchased: false, effectSpec: { type: 'sparkle', color: '#ffd166', count: 6, size: 4, life: 50, freq: 20 }, appliesTo: ['run','jump'] }
+        );
+    })();
 
 // Track selected skin id per category
 const selectedSkins = {
@@ -365,7 +374,7 @@ selectedSkins.points = 'pt_classic';
 // Selected visual effects (by type)
 // Only 'run' (moving on ground) and 'jump' are supported now.
 const selectedEffects = {
-    run: 'ef_none', // effect id to show while running/moving
+    run: 'ef_none', // effect id to show when running/moving
     jump: 'ef_none' // effect id to show when jumping
 };
 
@@ -542,12 +551,51 @@ function maybeSpawnMoveEffect() {
     if (moveSpawnCounter < freq) return;
     moveSpawnCounter = 0;
     const px = player.x + player.width / 2;
-    const py = player.y + player.height / 2;
-    // spawn small particles around player
-    for (let i = 0; i < (item.effectSpec.count || 3); i++) {
-        const ang = Math.random() * Math.PI * 2;
-        const speed = (item.effectSpec.speed || 0.6) * (0.5 + Math.random());
-        spawnParticle(px + (Math.random()-0.5)*8, py + (Math.random()-0.5)*8, Math.cos(ang)*speed, Math.sin(ang)*speed - 1, item.effectSpec.life || 50, item.effectSpec.size || 4, item.effectSpec.color || '#fff');
+    const py = player.y + player.height;
+    const spec = item.effectSpec;
+    switch (spec.type) {
+        case 'trail':
+            for (let i = 0; i < (spec.count || 4); i++) {
+                const rx = px - player.vx * (0.5 + Math.random());
+                const ry = py + (Math.random() - 0.5) * 6;
+                const vx = -player.vx * 0.2 + (Math.random() - 0.5) * 0.6;
+                const vy = -0.2 + (Math.random() - 0.5) * 0.4;
+                spawnParticle(rx, ry, vx, vy, spec.life || 40, spec.size || 4, spec.color || '#fff');
+            }
+            break;
+        case 'smoke':
+            for (let i = 0; i < (spec.count || 2); i++) {
+                const rx = px + (Math.random() - 0.5) * 10;
+                const ry = py + 6;
+                spawnParticle(rx, ry, (Math.random() - 0.5) * 0.4, -0.6 - Math.random() * 0.6, spec.life || 50, spec.size || 10, spec.color || 'rgba(120,120,120,0.6)');
+            }
+            break;
+        case 'sparkle':
+            for (let i = 0; i < (spec.count || 3); i++) {
+                const rx = px + (Math.random() - 0.5) * 8;
+                const ry = py - 6 + (Math.random() - 0.5) * 6;
+                spawnParticle(rx, ry, (Math.random() - 0.5) * 0.6, -Math.random() * 0.8, spec.life || 40, spec.size || 3, spec.color || '#fff');
+            }
+            break;
+        case 'shock':
+            for (let i = 0; i < (spec.count || 3); i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const speed = (spec.radius || 12) * (0.06 + Math.random() * 0.06);
+                spawnParticle(px, py, Math.cos(ang) * speed, Math.sin(ang) * speed * 0.4 - 0.4, spec.life || 24, spec.size || 3, spec.color || 'rgba(160,200,255,0.6)');
+            }
+            break;
+        case 'halo':
+            // draw a soft pulse via a large translucent particle
+            spawnParticle(px, py - 6, 0, 0, spec.life || 40, spec.radius || 22, spec.color || 'rgba(127,0,255,0.2)');
+            break;
+        default:
+            // generic fallback
+            for (let i = 0; i < (spec.count || 3); i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const speed = (spec.speed || 0.6) * (0.5 + Math.random());
+                spawnParticle(px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 8, Math.cos(ang) * speed, Math.sin(ang) * speed - 1, spec.life || 50, spec.size || 4, spec.color || '#fff');
+            }
+            break;
     }
 }
 
@@ -560,14 +608,41 @@ function spawnJumpEffect() {
     if (item.effectSpec.type === 'orbit') return; // orbit handled separately
     const px = player.x + player.width / 2;
     const py = player.y + player.height;
-    for (let i = 0; i < (item.effectSpec.count || 8); i++) {
-        const ang = -Math.PI/2 + (Math.random()-0.5) * Math.PI/3;
-        const speed = (item.effectSpec.speed || 2) * (0.6 + Math.random()*0.8);
-        spawnParticle(px + (Math.random()-0.5)*6, py, Math.cos(ang)*speed, Math.sin(ang)*speed, item.effectSpec.life || 40, item.effectSpec.size || 5, item.effectSpec.color || '#fff');
+    const spec = item.effectSpec;
+    switch (spec.type) {
+        case 'burst':
+            for (let i = 0; i < (spec.count || 12); i++) {
+                const ang = -Math.PI/2 + (Math.random() - 0.5) * (Math.PI * 2);
+                const speed = (spec.speed || 2) * (0.6 + Math.random() * 0.9);
+                spawnParticle(px + (Math.random() - 0.5) * 6, py, Math.cos(ang) * speed, Math.sin(ang) * speed, spec.life || 40, spec.size || 5, spec.color || '#fff');
+            }
+            break;
+        case 'confetti':
+            for (let i = 0; i < (spec.count || 12); i++) {
+                const col = spec.colors ? spec.colors[Math.floor(Math.random() * spec.colors.length)] : '#fff';
+                const vx = (Math.random() - 0.5) * spec.speed || (Math.random() - 0.5) * 2;
+                const vy = -1 - Math.random() * 2;
+                spawnParticle(px + (Math.random() - 0.5) * 12, py, vx, vy, spec.life || 60, spec.size || 5, col);
+            }
+            break;
+        case 'sparkle':
+            for (let i = 0; i < (spec.count || 8); i++) {
+                const vx = (Math.random() - 0.5) * 1.2;
+                const vy = -1 - Math.random() * 1.5;
+                spawnParticle(px + (Math.random() - 0.5) * 8, py, vx, vy, spec.life || 40, spec.size || 3, spec.color || '#fff');
+            }
+            break;
+        default:
+            for (let i = 0; i < (spec.count || 8); i++) {
+                const ang = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/3;
+                const speed = (spec.speed || 2) * (0.6 + Math.random() * 0.8);
+                spawnParticle(px + (Math.random() - 0.5) * 6, py, Math.cos(ang) * speed, Math.sin(ang) * speed, spec.life || 40, spec.size || 5, spec.color || '#fff');
+            }
+            break;
     }
 }
 
-// spawn continuous airborne effect while in air (for effects that apply to jump)
+// spawn continuous airborne effect when in air (for effects that apply to jump)
 let airSpawnCounter = 0;
 function maybeSpawnAirEffect() {
     // prefer jump-specific effect, fall back to idle-selected effect
@@ -577,15 +652,33 @@ function maybeSpawnAirEffect() {
     if (!item || !item.effectSpec) return;
     if (item.effectSpec.type === 'orbit') return; // orbit handled separately
     airSpawnCounter++;
-    const freq = item.effectSpec.freq || 8; // frames between spawns while airborne
+    const freq = item.effectSpec.freq || 8; // frames between spawns when airborne
     if (airSpawnCounter < freq) return;
     airSpawnCounter = 0;
     const px = player.x + player.width / 2;
     const py = player.y + player.height;
-    for (let i = 0; i < (item.effectSpec.count || 4); i++) {
-        const ang = -Math.PI/2 + (Math.random()-0.5) * Math.PI/2;
-        const speed = (item.effectSpec.speed || 1.5) * (0.6 + Math.random()*0.8);
-        spawnParticle(px + (Math.random()-0.5)*8, py + (Math.random()-0.5)*6, Math.cos(ang)*speed, Math.sin(ang)*speed, item.effectSpec.life || 40, item.effectSpec.size || 4, item.effectSpec.color || '#fff');
+    const spec = item.effectSpec;
+    // continuous airborne effects: sparkle, smoke-like drift
+    switch (spec.type) {
+        case 'sparkle':
+            for (let i = 0; i < (spec.count || 4); i++) {
+                const vx = (Math.random() - 0.5) * 1.2;
+                const vy = -0.8 + (Math.random() - 0.5) * 0.6;
+                spawnParticle(px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 6, vx, vy, spec.life || 40, spec.size || 4, spec.color || '#fff');
+            }
+            break;
+        case 'smoke':
+            for (let i = 0; i < (spec.count || 2); i++) {
+                spawnParticle(px + (Math.random() - 0.5) * 8, py + 6, (Math.random() - 0.5) * 0.3, -0.4 - Math.random() * 0.4, spec.life || 50, spec.size || 8, spec.color || 'rgba(120,120,120,0.6)');
+            }
+            break;
+        default:
+            for (let i = 0; i < (spec.count || 3); i++) {
+                const ang = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/2;
+                const speed = (spec.speed || 1.5) * (0.6 + Math.random() * 0.8);
+                spawnParticle(px + (Math.random() - 0.5) * 8, py + (Math.random() - 0.5) * 6, Math.cos(ang) * speed, Math.sin(ang) * speed, spec.life || 40, spec.size || 4, spec.color || '#fff');
+            }
+            break;
     }
 }
 
@@ -798,7 +891,7 @@ function gameLoop() {
         maybeSpawnMoveEffect();
     }
 
-    // spawn continuous air/jump effect while player is airborne (jumping)
+    // spawn continuous air/jump effect when player is airborne (jumping)
     if (!player.onGround) {
         maybeSpawnAirEffect();
     }
