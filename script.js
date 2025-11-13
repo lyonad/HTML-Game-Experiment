@@ -57,7 +57,8 @@ function generateFood(allowInView = false) {
                 x: foodX,
                 y: platform.y - 25,
                 width: 15,
-                height: 15
+                height: 15,
+                bounceTime: 0
             });
         }
     }
@@ -93,7 +94,8 @@ function drawGame() {
     for (let food of foods) {
         const screenX = food.x - camera.x;
         if (screenX + food.width > 0 && screenX < canvas.width) {
-            ctx.fillRect(screenX, food.y, food.width, food.height);
+            const yOffset = Math.sin(food.bounceTime) * 5;
+            ctx.fillRect(screenX, food.y + yOffset, food.width, food.height);
         }
     }
 }
@@ -196,6 +198,12 @@ function checkFoodCollision() {
 function gameLoop() {
     updatePlayer();
     checkFoodCollision();
+
+    // Update food animations
+    for (let food of foods) {
+        food.bounceTime += 0.1;
+    }
+
     drawGame();
 }
 
