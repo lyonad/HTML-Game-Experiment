@@ -201,7 +201,7 @@ function gameLoop() {
 
     // Update food animations
     for (let food of foods) {
-        food.bounceTime += 0.1;
+        food.bounceTime += 0.05;
     }
 
     drawGame();
