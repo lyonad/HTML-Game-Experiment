@@ -23,7 +23,8 @@ let player = {
     vy: 0,
     width: 20,
     height: 20,
-    onGround: false
+    onGround: false,
+    rotation: 0
 };
 
 let foods = [];
@@ -76,8 +77,16 @@ function drawGame() {
     }
 
     // Draw player
+    ctx.save();
+    const playerScreenX = player.x - camera.x;
+    const playerScreenY = player.y;
+    const centerX = playerScreenX + player.width / 2;
+    const centerY = playerScreenY + player.height / 2;
+    ctx.translate(centerX, centerY);
+    ctx.rotate(player.rotation);
     ctx.fillStyle = '#808080'; // medium gray player
-    ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+    ctx.restore();
 
     // Draw foods
     ctx.fillStyle = '#A9A9A9'; // dark gray foods
@@ -107,6 +116,13 @@ function updatePlayer() {
 
     // Apply gravity
     player.vy += gravity;
+
+    // Update rotation if in air
+    if (!player.onGround) {
+        player.rotation += 0.1; // spin speed
+    } else {
+        player.rotation = 0; // reset when on ground
+    }
 
     // Update position
     player.x += player.vx;
@@ -189,6 +205,7 @@ function resetGame() {
     player.vx = 0;
     player.vy = 0;
     player.onGround = false;
+    player.rotation = 0;
     camera.x = 0;
     foods = [];
     platforms = [
