@@ -3,8 +3,8 @@
 A simple grayscale pixel platformer game built with HTML, CSS, and JavaScript. Jump between platforms, collect items, and explore endlessly to the right!
 
 ## Demo
-
-![Game Demo](Demo.png)
+ 
+![Game Demo](Demo-v2.png)
 
 ## How to Play
 
