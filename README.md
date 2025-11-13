@@ -2,6 +2,10 @@
 
 A simple grayscale pixel platformer game built with HTML, CSS, and JavaScript. Jump between platforms, collect items, and explore endlessly to the right!
 
+## Demo
+
+![Game Demo](Demo.png)
+
 ## How to Play
 
 - **Controls**: Use arrow keys or WASD to move left/right and jump (spacebar or up arrow/W).
@@ -24,6 +28,7 @@ A simple grayscale pixel platformer game built with HTML, CSS, and JavaScript. J
 - Responsive full-screen design
 - Grayscale aesthetic with Montserrat font
 - Score tracking
+- Animated player spinning in air and bouncing collectibles
 
 ## Technologies Used
 
