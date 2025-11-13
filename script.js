@@ -220,7 +220,7 @@ function resetGame() {
         {x: 0, y: canvas.height - 300, width: 400, height: 20},
     ];
     lastPlatformEnd = 400;
-    score = 0;
+    // score persists across deaths
     scoreElement.textContent = `Score: ${score}`;
     for (let i = 0; i < 5; i++) {
         generatePlatform();
