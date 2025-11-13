@@ -48,18 +48,25 @@ function generatePlatform() {
     lastPlatformEnd = x + width;
 }
 
+function addFoodToPlatform(platform) {
+    // Remove any existing food on this platform
+    foods = foods.filter(f => !(f.x >= platform.x && f.x < platform.x + platform.width));
+    const foodX = platform.x + Math.random() * (platform.width - 20);
+    foods.push({
+        x: foodX,
+        y: platform.y - 25,
+        width: 15,
+        height: 15,
+        bounceTime: 0
+    });
+}
+
 function generateFood(allowInView = false) {
     if (platforms.length > 1) {
         const platform = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1]; // skip initial ground
         const foodX = platform.x + Math.random() * (platform.width - 20);
         if (allowInView || foodX > camera.x + canvas.width) {
-            foods.push({
-                x: foodX,
-                y: platform.y - 25,
-                width: 15,
-                height: 15,
-                bounceTime: 0
-            });
+            addFoodToPlatform(platform);
         }
     }
 }
@@ -139,7 +146,10 @@ function updatePlayer() {
     // Generate new platforms if needed
     while (lastPlatformEnd - camera.x < canvas.width * 2) {
         generatePlatform();
-        if (Math.random() < 0.7) generateFood();
+        let chance = 0.1 + Math.random() * 0.4; // 10% to 50% chance
+        if (Math.random() < chance) {
+            addFoodToPlatform(platforms[platforms.length - 1]);
+        }
     }
 
     // Check platform collisions
@@ -189,7 +199,7 @@ function checkFoodCollision() {
             player.y + player.height > food.y) {
             foods.splice(i, 1);
             score += 10;
-            scoreElement.textContent = `Score: ${score}`;
+            scoreElement.textContent = `Point: ${score}`;
             generateFood();
         }
     }
@@ -221,10 +231,17 @@ function resetGame() {
     ];
     lastPlatformEnd = 400;
     // score persists across deaths
-    scoreElement.textContent = `Score: ${score}`;
+    scoreElement.textContent = `Point: ${score}`;
     for (let i = 0; i < 5; i++) {
         generatePlatform();
-        generateFood(true);
+    }
+    // Add initial foods, max 1 per platform
+    for (let platform of platforms) {
+        let hasFood = foods.some(f => f.x >= platform.x && f.x < platform.x + platform.width);
+        let chance = 0.1 + Math.random() * 0.4;
+        if (!hasFood && Math.random() < chance) {
+            addFoodToPlatform(platform);
+        }
     }
 }
 

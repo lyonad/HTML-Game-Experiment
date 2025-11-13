@@ -9,7 +9,7 @@ A simple grayscale pixel platformer game built with HTML, CSS, and JavaScript. J
 ## How to Play
 
 - **Controls**: Use arrow keys or WASD to move left/right and jump (spacebar or up arrow/W).
-- **Objective**: Collect gray items to increase your score. Avoid falling off the screen.
+- **Objective**: Collect gray items to increase your point. Avoid falling off the screen.
 - **Gameplay**: The camera follows you right, with no backtracking allowed. Platforms and items generate procedurally.
 
 ## Running the Game
@@ -27,7 +27,7 @@ A simple grayscale pixel platformer game built with HTML, CSS, and JavaScript. J
 - Infinite side-scrolling terrain generation
 - Responsive full-screen design
 - Grayscale aesthetic with Montserrat font
-- Score tracking
+- Point tracking
 - Animated player spinning in air and bouncing collectibles
 
 ## Technologies Used
