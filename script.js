@@ -13,12 +13,58 @@ const gravity = 0.5;
 let jumpStrength = -12; // kept mutable (unused by skins)
 let moveSpeed = 5;      // kept mutable (unused by skins)
 const friction = 0.8;
+// effect movement threshold: only spawn move effects when |vx| > this
+const MOVE_EFFECT_VX_THRESHOLD = 0.6;
 
 // Color variables for skins
 let bgColor = '#D3D3D3';
 let platformColor = '#696969';
 let playerColor = '#808080';
 let foodColor = '#A9A9A9';
+
+// Color helpers: parse simple hex/rgb(a) and choose contrasting text color
+function parseColorToRGB(str) {
+    if (!str) return null;
+    str = String(str).trim();
+    if (str.startsWith('#')) {
+        let hex = str.slice(1);
+        if (hex.length === 3) hex = hex.split('').map(s => s + s).join('');
+        if (hex.length !== 6) return null;
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        return { r, g, b, a: 1 };
+    }
+    const rgba = str.match(/rgba?\(([^)]+)\)/);
+    if (rgba) {
+        const parts = rgba[1].split(',').map(s => s.trim());
+        const r = parseInt(parts[0]);
+        const g = parseInt(parts[1]);
+        const b = parseInt(parts[2]);
+        const a = parts[3] ? parseFloat(parts[3]) : 1;
+        return { r, g, b, a };
+    }
+    return null;
+}
+
+function getContrastColor(colorStr) {
+    const c = parseColorToRGB(colorStr) || { r: 0, g: 0, b: 0 };
+    const brightness = (c.r * 299 + c.g * 587 + c.b * 114) / 1000;
+    return brightness > 140 ? '#000' : '#fff';
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    if (r < 0) r = 0;
+    if (r > h / 2) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.fill();
+}
 
 let camera = { x: 0, y: 0 };
 
@@ -40,6 +86,11 @@ let platforms = [
 
 let score = 0;
 let keys = {};
+// Cheat code input buffer
+let cheatBuffer = '';
+const CHEAT_CODE = 'momomo';
+let cheatMsg = '';
+let cheatMsgTimer = 0; // frames remaining to display message
 let lastPlatformEnd = 400;
 
 function generatePlatform() {
@@ -111,6 +162,33 @@ function drawGame() {
             ctx.fillRect(screenX, food.y + yOffset, food.width, food.height);
         }
     }
+
+    // Draw cheat message (if any) at top-right matching the `#score` HUD style
+    if (cheatMsgTimer > 0 && cheatMsg) {
+        ctx.save();
+        // Match CSS: font-size 2vw, padding 1vh/2vw, border-radius 1vw
+        const fontSize = Math.max(12, Math.round(canvas.width * 0.02)); // ~2vw
+        ctx.font = `${fontSize}px Montserrat, sans-serif`;
+        const paddingX = Math.round(canvas.width * 0.02); // 2vw
+        const paddingY = Math.round(canvas.height * 0.01); // 1vh
+        const textWidth = ctx.measureText(cheatMsg).width;
+        const rectW = Math.round(textWidth + paddingX * 2);
+        const rectH = Math.round(fontSize + paddingY * 2);
+        const rectX = Math.round(canvas.width - (canvas.width * 0.02) - rectW); // 2vw from right
+        const rectY = Math.round(canvas.height * 0.02); // 2vh from top
+
+        // background: semi-transparent black like #score
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        const radius = Math.max(4, Math.round(canvas.width * 0.01)); // ~1vw
+        roundRect(ctx, rectX, rectY, rectW, rectH, radius);
+
+        // text: white, vertically centered
+        ctx.fillStyle = '#fff';
+        const textX = rectX + paddingX;
+        const textY = rectY + paddingY + fontSize * 0.8; // baseline adjustment
+        ctx.fillText(cheatMsg, textX, textY);
+        ctx.restore();
+    }
 }
 
 function updatePlayer() {
@@ -127,6 +205,8 @@ function updatePlayer() {
     if ((keys[38] || keys[87] || keys[32]) && player.onGround) { // up arrow, W, or space
         player.vy = jumpStrength;
         player.onGround = false;
+        // spawn jump effect (on jump initiation)
+        spawnJumpEffect();
     }
 
     // Apply gravity
@@ -234,8 +314,8 @@ const shopItems = [
     { id: 'bg_midnight', type: 'background', name: 'Background Midnight', desc: 'Dark night sky', price: 150, purchased: false, color: '#1b1f2b' },
     { id: 'bg_forest', type: 'background', name: 'Background Forest', desc: 'Misty forest green', price: 170, purchased: false, color: '#d6eadf' },
     { id: 'bg_sunset', type: 'background', name: 'Background Sunset', desc: 'Warm sunset sky', price: 180, purchased: false, color: '#fff1e6' },
-    { id: 'bg_neon', type: 'background', name: 'Background Neon', desc: 'Dark neon backdrop', price: 200, purchased: false, color: '#0f0f12' },
-    { id: 'bg_space', type: 'background', name: 'Background Space', desc: 'Deep space/violet', price: 210, purchased: false, color: '#070b18' },
+    { id: 'bg_neon', type: 'background', name: 'Background Neon', desc: 'Dark neon backdrop', price: 200, purchased: false, color: '#7f00ff' },
+    { id: 'bg_space', type: 'background', name: 'Background Space', desc: 'Deep space/violet', price: 210, purchased: false, color: '#2b0f4a' },
 
     // Platform skins
     { id: 'plat_classic', type: 'platform', name: 'Platform Classic', desc: 'Default platforms', price: 0, purchased: true, color: '#696969' },
@@ -247,11 +327,46 @@ const shopItems = [
     { id: 'plat_gold', type: 'platform', name: 'Platform Gold', desc: 'Shiny gold platform', price: 280, purchased: false, color: '#d4af37' }
 ];
 
+// Point/item color skins
+shopItems.push(
+    { id: 'pt_classic', type: 'points', name: 'Point Classic', desc: 'Default point color', price: 0, purchased: true, color: '#A9A9A9' },
+    { id: 'pt_yellow', type: 'points', name: 'Point Yellow', desc: 'Bright yellow point', price: 80, purchased: false, color: '#ffd54f' },
+    { id: 'pt_orange', type: 'points', name: 'Point Orange', desc: 'Vibrant orange', price: 120, purchased: false, color: '#ff8a65' },
+    { id: 'pt_pink', type: 'points', name: 'Point Pink', desc: 'Soft pink point', price: 140, purchased: false, color: '#ff6bcb' },
+    { id: 'pt_cyan', type: 'points', name: 'Point Cyan', desc: 'Cool cyan point', price: 160, purchased: false, color: '#4dd0e1' },
+    { id: 'pt_neon', type: 'points', name: 'Point Neon', desc: 'Neon highlight', price: 220, purchased: false, color: '#39ff14' },
+    { id: 'pt_gold', type: 'points', name: 'Point Gold', desc: 'Premium gold point', price: 300, purchased: false, color: '#ffd166' }
+);
+
+// Effects: visual effects for idle and jump
+shopItems.push(
+    { id: 'ef_none', type: 'effects', name: 'No Effect', desc: 'No special effects', price: 0, purchased: true, appliesTo: ['idle','jump'], effectSpec: { type: 'none' } },
+    { id: 'ef_sparkle', type: 'effects', name: 'Sparkle', desc: 'Tiny long-lived sparkles', price: 40, purchased: false, effectSpec: { type: 'sparkle', color: '#fff7c0', count: 3, life: 60, spread: 10, freq: 24 }, appliesTo: ['idle'] },
+    { id: 'ef_aura', type: 'effects', name: 'Aura', desc: 'Soft colored aura when moving', price: 80, purchased: false, effectSpec: { type: 'aura', color: '#b388ff', radius: 22, alpha: 0.18, freq: 30 }, appliesTo: ['idle'] },
+    { id: 'ef_trail', type: 'effects', name: 'Trail', desc: 'Smooth trailing glows while moving', price: 120, purchased: false, effectSpec: { type: 'trail', color: '#80deea', count: 6, life: 40, spacing: 6, freq: 6 }, appliesTo: ['idle','jump'] },
+    { id: 'ef_burst_jump', type: 'effects', name: 'Jump Burst', desc: 'Burst of particles on jump', price: 150, purchased: false, effectSpec: { type: 'burst', color: '#ff8a65', count: 18, spread: 180, speed: 1.6, life: 40 }, appliesTo: ['jump'] },
+    // new orbiting-lines (atom-like) effect
+    { id: 'ef_orbit', type: 'effects', name: 'Orbit Lines', desc: 'Lines orbiting the player like an atom', price: 200, purchased: false, effectSpec: { type: 'orbit', color: '#ffd54f', rings: 2, perRing: 6, radii: [12, 26], speed: 0.02, lineLength: 10, thickness: 2 }, appliesTo: ['idle','jump'] },
+    { id: 'ef_burst_big', type: 'effects', name: 'Burst', desc: 'Big burst on jump', price: 200, purchased: false, effectSpec: { type: 'burst', color: '#ffe29a', count: 14, size: 5, life: 40, speed: 3 }, appliesTo: ['jump'] },
+    { id: 'ef_neonhalo', type: 'effects', name: 'Neon Halo', desc: 'Bright neon halo idle & jump', price: 240, purchased: false, effectSpec: { type: 'halo', color: '#7f00ff', count: 5, size: 6, life: 40, speed: 1.0, freq: 22 }, appliesTo: ['idle','jump'] },
+    { id: 'ef_golddust', type: 'effects', name: 'Gold Dust', desc: 'Sparkling gold particles', price: 300, purchased: false, effectSpec: { type: 'sparkle', color: '#ffd166', count: 6, size: 4, life: 40, speed: 1.6, freq: 18 }, appliesTo: ['idle','jump'] }
+);
+
 // Track selected skin id per category
 const selectedSkins = {
     player: 'player_classic',
     background: 'bg_classic',
     platform: 'plat_classic'
+};
+
+// add default selection for point colors
+selectedSkins.points = 'pt_classic';
+
+// Selected visual effects (by type)
+// Only 'run' (moving on ground) and 'jump' are supported now.
+const selectedEffects = {
+    run: 'ef_none', // effect id to show while running/moving
+    jump: 'ef_none' // effect id to show when jumping
 };
 
 // --- Save / Load progress ---
@@ -260,7 +375,8 @@ function getSaveData() {
         score: score,
         selectedSkins: selectedSkins,
         purchases: shopItems.reduce((acc, it) => { acc[it.id] = !!it.purchased; return acc; }, {}),
-        colors: { playerColor, platformColor, bgColor }
+        colors: { playerColor, platformColor, bgColor, foodColor },
+        selectedEffects: selectedEffects
     };
 }
 
@@ -291,7 +407,17 @@ function loadProgress() {
             if (data.colors.playerColor) playerColor = data.colors.playerColor;
             if (data.colors.platformColor) platformColor = data.colors.platformColor;
             if (data.colors.bgColor) bgColor = data.colors.bgColor;
+            if (data.colors.foodColor) foodColor = data.colors.foodColor;
         }
+            if (data.selectedEffects) {
+                // backward compatibility: map old 'idle' to new 'run'
+                if (data.selectedEffects.run) selectedEffects.run = data.selectedEffects.run;
+                else if (data.selectedEffects.idle) selectedEffects.run = data.selectedEffects.idle;
+                if (data.selectedEffects.jump) selectedEffects.jump = data.selectedEffects.jump;
+                // validate saved effect ids exist in shopItems; otherwise reset to 'ef_none'
+                if (selectedEffects.run && !getEffectById(selectedEffects.run)) selectedEffects.run = 'ef_none';
+                if (selectedEffects.jump && !getEffectById(selectedEffects.jump)) selectedEffects.jump = 'ef_none';
+            }
         scoreElement.textContent = `Point: ${score}`;
         return true;
     } catch (e) {
@@ -310,13 +436,172 @@ function applySkinByCategory(category, color) {
     if (category === 'player') playerColor = color;
     if (category === 'background') bgColor = color;
     if (category === 'platform') platformColor = color;
+    if (category === 'points') foodColor = color;
+}
+
+// --- Simple particle system for effects ---
+let particles = [];
+
+function spawnParticle(x, y, vx, vy, life, size, color) {
+    particles.push({ x, y, vx, vy, life, size: size || 4, color, maxLife: life });
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.15; // gravity for particles
+        p.life -= 1;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function drawParticles() {
+    for (let p of particles) {
+        const denom = p.maxLife || 60;
+        let alpha = 0;
+        if (denom > 0) alpha = Math.max(0, Math.min(1, p.life / denom));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        // particles stored in world coords — convert to screen coords by subtracting camera.x
+        ctx.fillRect(p.x - camera.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+}
+
+// --- Orbiters: for atom-like orbiting-lines effect ---
+let orbiters = []; // each orbiter: {angle, radius, speed, ringIndex, color, length, thickness}
+
+function spawnOrbiters(effectSpec) {
+    orbiters.length = 0;
+    if (!effectSpec || effectSpec.type !== 'orbit') return;
+    const rings = effectSpec.rings || 1;
+    const perRing = effectSpec.perRing || 6;
+    const radii = effectSpec.radii || [12];
+    for (let r = 0; r < rings; r++) {
+        const radius = radii[r] || (12 + r * 14);
+        for (let i = 0; i < perRing; i++) {
+            const angle = (Math.PI * 2 * i) / perRing + (r % 2 ? 0.2 : 0);
+            const speed = (effectSpec.speed || 0.02) * (1 + r * 0.4) * (r % 2 ? -1 : 1);
+            orbiters.push({ angle, radius, speed, ringIndex: r, color: effectSpec.color || '#fff', length: effectSpec.lineLength || 10, thickness: effectSpec.thickness || 2 });
+        }
+    }
+}
+
+function clearOrbiters() {
+    orbiters.length = 0;
+}
+
+function updateOrbiters() {
+    if (!orbiters.length) return;
+    for (let o of orbiters) {
+        o.angle += o.speed;
+    }
+}
+
+function drawOrbiters() {
+    if (!orbiters.length) return;
+    // Only render orbiters when player is moving or airborne (respecting global effect rules)
+    if (player.onGround && Math.abs(player.vx) <= MOVE_EFFECT_VX_THRESHOLD) return;
+    const px = player.x + player.width / 2 - camera.x;
+    const py = player.y + player.height / 2;
+    ctx.save();
+    for (let o of orbiters) {
+        const ox = px + Math.cos(o.angle) * o.radius;
+        const oy = py + Math.sin(o.angle) * o.radius;
+        ctx.strokeStyle = o.color;
+        ctx.lineWidth = o.thickness;
+        ctx.beginPath();
+        // draw a short line segment tangent to orbit to give 'orbiting line' look
+        const tx = ox + Math.cos(o.angle + Math.PI/2) * (o.length/2);
+        const ty = oy + Math.sin(o.angle + Math.PI/2) * (o.length/2);
+        const tx2 = ox - Math.cos(o.angle + Math.PI/2) * (o.length/2);
+        const ty2 = oy - Math.sin(o.angle + Math.PI/2) * (o.length/2);
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(tx2, ty2);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function getEffectById(id) {
+    return shopItems.find(it => it.id === id);
+}
+
+// spawn move effect based on selectedEffects.run (only when player is moving on ground)
+let moveSpawnCounter = 0;
+function maybeSpawnMoveEffect() {
+    const id = selectedEffects.run; // uses the 'run' slot for move effects
+    if (!id) return;
+    const item = getEffectById(id);
+    if (!item || !item.effectSpec) return;
+    if (item.effectSpec.type === 'orbit') return; // orbit handled separately
+    moveSpawnCounter++;
+    const freq = item.effectSpec.freq || 30; // frames between spawns
+    if (moveSpawnCounter < freq) return;
+    moveSpawnCounter = 0;
+    const px = player.x + player.width / 2;
+    const py = player.y + player.height / 2;
+    // spawn small particles around player
+    for (let i = 0; i < (item.effectSpec.count || 3); i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const speed = (item.effectSpec.speed || 0.6) * (0.5 + Math.random());
+        spawnParticle(px + (Math.random()-0.5)*8, py + (Math.random()-0.5)*8, Math.cos(ang)*speed, Math.sin(ang)*speed - 1, item.effectSpec.life || 50, item.effectSpec.size || 4, item.effectSpec.color || '#fff');
+    }
+}
+
+function spawnJumpEffect() {
+    // prefer jump-specific effect, fall back to idle-selected effect
+    const id = selectedEffects.jump;
+    if (!id) return;
+    const item = getEffectById(id);
+    if (!item || !item.effectSpec) return;
+    if (item.effectSpec.type === 'orbit') return; // orbit handled separately
+    const px = player.x + player.width / 2;
+    const py = player.y + player.height;
+    for (let i = 0; i < (item.effectSpec.count || 8); i++) {
+        const ang = -Math.PI/2 + (Math.random()-0.5) * Math.PI/3;
+        const speed = (item.effectSpec.speed || 2) * (0.6 + Math.random()*0.8);
+        spawnParticle(px + (Math.random()-0.5)*6, py, Math.cos(ang)*speed, Math.sin(ang)*speed, item.effectSpec.life || 40, item.effectSpec.size || 5, item.effectSpec.color || '#fff');
+    }
+}
+
+// spawn continuous airborne effect while in air (for effects that apply to jump)
+let airSpawnCounter = 0;
+function maybeSpawnAirEffect() {
+    // prefer jump-specific effect, fall back to idle-selected effect
+    const id = selectedEffects.jump;
+    if (!id) return;
+    const item = getEffectById(id);
+    if (!item || !item.effectSpec) return;
+    if (item.effectSpec.type === 'orbit') return; // orbit handled separately
+    airSpawnCounter++;
+    const freq = item.effectSpec.freq || 8; // frames between spawns while airborne
+    if (airSpawnCounter < freq) return;
+    airSpawnCounter = 0;
+    const px = player.x + player.width / 2;
+    const py = player.y + player.height;
+    for (let i = 0; i < (item.effectSpec.count || 4); i++) {
+        const ang = -Math.PI/2 + (Math.random()-0.5) * Math.PI/2;
+        const speed = (item.effectSpec.speed || 1.5) * (0.6 + Math.random()*0.8);
+        spawnParticle(px + (Math.random()-0.5)*8, py + (Math.random()-0.5)*6, Math.cos(ang)*speed, Math.sin(ang)*speed, item.effectSpec.life || 40, item.effectSpec.size || 4, item.effectSpec.color || '#fff');
+    }
 }
 
 function renderShop() {
     shopItemsDiv.innerHTML = '';
-    const categories = ['player', 'background', 'platform'];
+    const categories = ['player', 'background', 'platform', 'points', 'effects'];
     // pagination: show one category per page
     const category = categories[currentShopPage] || categories[0];
+
+    const labelMap = {
+        player: 'Player',
+        background: 'Background',
+        platform: 'Platform',
+        points: 'Point Color',
+        effects: 'Effects'
+    };
 
     // nav
     const nav = document.createElement('div');
@@ -342,7 +627,8 @@ function renderShop() {
     const header = document.createElement('div');
     header.style.fontWeight = '700';
     header.style.margin = '8px 0 4px';
-    header.textContent = category.charAt(0).toUpperCase() + category.slice(1) + ' Skins';
+    const baseLabel = labelMap[category] || (category.charAt(0).toUpperCase() + category.slice(1));
+    header.textContent = (category === 'points' || category === 'effects') ? baseLabel : (baseLabel + ' Skins');
     shopItemsDiv.appendChild(header);
 
     // Show items sorted by price (cheapest → most expensive)
@@ -356,7 +642,7 @@ function renderShop() {
 
         const swatch = document.createElement('div');
         swatch.className = 'swatch';
-        swatch.style.background = item.color;
+        swatch.style.background = item.color || (item.effectSpec && item.effectSpec.color) || '#ccc';
 
         const meta = document.createElement('div');
         meta.className = 'meta';
@@ -376,24 +662,52 @@ function renderShop() {
 
         const btn = document.createElement('button');
         btn.className = 'buy-btn';
-        btn.textContent = item.purchased ? (selectedSkins[category] === item.id ? 'Selected' : 'Select') : (item.price > 0 ? 'Buy' : 'Select');
+            // Determine selected state
+        let isSelected = false;
+        if (category === 'points') isSelected = selectedSkins.points === item.id;
+        else if (category === 'effects') {
+            // selected if applied to either idle or jump
+                isSelected = selectedEffects.run === item.id || selectedEffects.jump === item.id;
+        } else {
+            isSelected = selectedSkins[category] === item.id;
+        }
+        btn.textContent = item.purchased ? (isSelected ? 'Selected' : 'Select') : (item.price > 0 ? 'Buy' : 'Select');
         btn.disabled = (!item.purchased && score < item.price);
         btn.addEventListener('click', () => {
-            if (!item.purchased) {
+                if (!item.purchased) {
                 if (score >= item.price) {
                     score -= item.price;
                     item.purchased = true;
-                    selectedSkins[category] = item.id;
-                    applySkinByCategory(category, item.color);
+                    // equip behavior after purchase
+                        if (category === 'effects') {
+                            // enforce single active effect: clear previous, then equip this one for its appliesTo types
+                            selectedEffects.run = null;
+                            selectedEffects.jump = null;
+                            if (item.appliesTo && item.appliesTo.includes('run')) selectedEffects.run = item.id;
+                            if (item.appliesTo && item.appliesTo.includes('jump')) selectedEffects.jump = item.id;
+                        } else {
+                        selectedSkins[category] = item.id;
+                        applySkinByCategory(category, item.color);
+                    }
                     scoreElement.textContent = `Point: ${score}`;
                     saveProgress();
+                    updateActiveOrbiters();
                     renderShop();
                 }
             } else {
-                // select purchased skin
-                selectedSkins[category] = item.id;
-                applySkinByCategory(category, item.color);
+                // select / equip purchased item
+                if (category === 'effects') {
+                    // enforce single active effect when selecting: clear previous then equip
+                    selectedEffects.run = null;
+                    selectedEffects.jump = null;
+                    if (item.appliesTo && item.appliesTo.includes('run')) selectedEffects.run = item.id;
+                    if (item.appliesTo && item.appliesTo.includes('jump')) selectedEffects.jump = item.id;
+                } else {
+                    selectedSkins[category] = item.id;
+                    applySkinByCategory(category, item.color);
+                }
                 saveProgress();
+                updateActiveOrbiters();
                 renderShop();
             }
         });
@@ -416,6 +730,34 @@ function applySelectedSkins() {
 // Load any saved progress from previous sessions (then apply skins)
 loadProgress();
 applySelectedSkins();
+// restore orbiters if orbit effect was saved
+function updateActiveOrbiters() {
+    const runId = selectedEffects.run;
+    const jumpId = selectedEffects.jump;
+    // prefer jump-specific orbit if present, otherwise run
+    let orbitId = null;
+    if (jumpId && getEffectById(jumpId) && getEffectById(jumpId).effectSpec && getEffectById(jumpId).effectSpec.type === 'orbit') orbitId = jumpId;
+    else if (runId && getEffectById(runId) && getEffectById(runId).effectSpec && getEffectById(runId).effectSpec.type === 'orbit') orbitId = runId;
+
+    if (orbitId) {
+        const spec = getEffectById(orbitId).effectSpec;
+        spawnOrbiters(spec);
+    } else {
+        clearOrbiters();
+    }
+}
+
+updateActiveOrbiters();
+
+// Cheat activation: grant points when correct sequence typed
+function activateCheat() {
+    score += 1000;
+    scoreElement.textContent = `Point: ${score}`;
+    cheatMsg = '+1000 pts';
+    cheatMsgTimer = 180; // show for ~3 seconds at 60fps
+    saveProgress();
+    console.log('Cheat activated: momomo');
+}
 
 // Save when leaving the page
 window.addEventListener('beforeunload', saveProgress);
@@ -451,7 +793,28 @@ function gameLoop() {
         food.bounceTime += 0.1;
     }
 
+    // spawn move effect when player is on ground and moving
+    if (player.onGround && Math.abs(player.vx) > MOVE_EFFECT_VX_THRESHOLD) {
+        maybeSpawnMoveEffect();
+    }
+
+    // spawn continuous air/jump effect while player is airborne (jumping)
+    if (!player.onGround) {
+        maybeSpawnAirEffect();
+    }
+
+    updateParticles();
+    updateOrbiters();
+
+    // decrement cheat message timer
+    if (cheatMsgTimer > 0) {
+        cheatMsgTimer--;
+        if (cheatMsgTimer === 0) cheatMsg = '';
+    }
+
     drawGame();
+    drawParticles();
+    drawOrbiters();
 }
 
 function resetGame() {
@@ -484,6 +847,20 @@ function resetGame() {
 
 document.addEventListener('keydown', (e) => {
     keys[e.keyCode] = true;
+    // track simple cheat code input via printable characters
+    try {
+        const k = (e.key || '').toLowerCase();
+        if (k && k.length === 1 && /[a-z0-9]/.test(k)) {
+            cheatBuffer += k;
+            if (cheatBuffer.length > CHEAT_CODE.length) cheatBuffer = cheatBuffer.slice(-CHEAT_CODE.length);
+            if (cheatBuffer === CHEAT_CODE) {
+                activateCheat();
+                cheatBuffer = '';
+            }
+        }
+    } catch (err) {
+        // ignore
+    }
 });
 
 document.addEventListener('keyup', (e) => {
