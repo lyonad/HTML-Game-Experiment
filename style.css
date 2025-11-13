@@ -1,0 +1,35 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+#game-canvas {
+    display: block;
+    background-color: #D3D3D3;
+}
+
+#score {
+    position: absolute;
+    top: 2vh;
+    left: 2vw;
+    font-size: 2vw;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 1vh 2vw;
+    border-radius: 1vw;
+}
+
+#instructions {
+    position: absolute;
+    top: 2vh;
+    right: 2vw;
+    font-size: 2vw;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 1vh 2vw;
+    border-radius: 1vw;
+}
