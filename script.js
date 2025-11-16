@@ -159,15 +159,11 @@ function drawGame() {
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw platforms with shadows and depth
+    // Draw platforms with depth
     ctx.fillStyle = platformColor; // platform color (skin)
     for (let platform of platforms) {
         const screenX = platform.x - camera.x;
         if (screenX + platform.width > 0 && screenX < canvas.width) {
-            // Draw shadow
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            ctx.fillRect(screenX + 3, platform.y + 3, platform.width, platform.height);
-            
             // Draw platform with gradient
             const platGradient = ctx.createLinearGradient(screenX, platform.y, screenX, platform.y + platform.height);
             const platGradientColors = getGradientColors('platform');
@@ -207,15 +203,6 @@ function drawGame() {
     const centerY = playerScreenY + player.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(player.rotation);
-    
-    // Draw player shadow (always downward)
-    ctx.save();
-    ctx.rotate(-player.rotation);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.beginPath();
-    ctx.ellipse(0, player.height / 2 + 3, player.width * 0.6, player.height * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
     
     // Get player color and gradient
     const playerRgb = parseColorToRGB(playerColor) || { r: 128, g: 128, b: 128 };
@@ -305,12 +292,6 @@ function drawGame() {
             ctx.fillStyle = glowGrad;
             ctx.fillRect(screenX - 3, foodY - 3, food.width + 6, food.height + 6);
             
-            // Draw food shadow
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            ctx.beginPath();
-            ctx.ellipse(foodCenterX + 1, foodCenterY + food.height / 2 + 2, food.width * 0.5, food.height * 0.2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
             // Draw food body with gradient
             const foodGradient = ctx.createRadialGradient(
                 foodCenterX - food.width * 0.2, 
@@ -355,7 +336,7 @@ function drawGame() {
         }
     }
 
-    // Draw cheat message (if any) at top-right matching the `#score` HUD style
+    // Draw cheat message (if any) at bottom-right matching the `#score` HUD style
     if (cheatMsgTimer > 0 && cheatMsg) {
         ctx.save();
         // Match CSS: font-size 2vw, padding 1vh/2vw, border-radius 1vw
@@ -367,7 +348,7 @@ function drawGame() {
         const rectW = Math.round(textWidth + paddingX * 2);
         const rectH = Math.round(fontSize + paddingY * 2);
         const rectX = Math.round(canvas.width - (canvas.width * 0.02) - rectW); // 2vw from right
-        const rectY = Math.round(canvas.height * 0.02); // 2vh from top
+        const rectY = Math.round(canvas.height - (canvas.height * 0.02) - rectH); // 2vh from bottom
 
         // background: semi-transparent black like #score
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -1172,6 +1153,12 @@ function closeShop() {
 // (renderShop is defined above for category-based skins)
 
 closeShopBtn.addEventListener('click', closeShop);
+
+// Shop button in top right
+const shopBtn = document.getElementById('shop-btn');
+if (shopBtn) {
+    shopBtn.addEventListener('click', openShop);
+}
 
 // Toggle shop with Q (keyCode 81)
 document.addEventListener('keydown', (e) => {
