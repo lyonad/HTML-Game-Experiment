@@ -4,10 +4,13 @@ A simple grayscale pixel platformer game built with HTML, CSS, and JavaScript. J
 
 ## Demo
  
+### Demo (v3)
+![Game Demo v3](Demo-v3.png)
+
 ### Demo (v2)
 ![Game Demo v2](Demo-v2.png)
 
-### Demo (original)
+### Demo (V1)
 ![Game Demo](Demo.png)
 
 ## How to Play
