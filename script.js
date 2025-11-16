@@ -73,8 +73,8 @@ let player = {
     y: 50,
     vx: 0,
     vy: 0,
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     onGround: false,
     rotation: 0
 };
