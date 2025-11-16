@@ -10,7 +10,7 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 const gravity = 0.5;
-let jumpStrength = -12; // kept mutable (unused by skins)
+let jumpStrength = -12.5; // kept mutable (unused by skins) - slightly increased for easier gameplay
 let moveSpeed = 5;      // kept mutable (unused by skins)
 const friction = 0.8;
 // effect movement threshold: only spawn move effects when |vx| > this
@@ -64,6 +64,17 @@ function roundRect(ctx, x, y, w, h, r) {
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
     ctx.fill();
+}
+
+// Helper function to get gradient colors for a category
+function getGradientColors(category) {
+    const skinId = selectedSkins[category];
+    if (!skinId) return null;
+    const item = shopItems.find(i => i.id === skinId);
+    if (item && item.gradient && Array.isArray(item.gradient)) {
+        return item.gradient;
+    }
+    return null;
 }
 
 let camera = { x: 0, y: 0 };
@@ -131,10 +142,20 @@ function generateFood(allowInView = false) {
 function drawGame() {
     // Draw background with gradient
     const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    const rgb = parseColorToRGB(bgColor) || { r: 211, g: 211, b: 211 };
-    const darkerBg = `rgb(${Math.max(0, rgb.r - 20)}, ${Math.max(0, rgb.g - 20)}, ${Math.max(0, rgb.b - 20)})`;
-    bgGradient.addColorStop(0, bgColor);
-    bgGradient.addColorStop(1, darkerBg);
+    const bgGradientColors = getGradientColors('background');
+    if (bgGradientColors && bgGradientColors.length > 1) {
+        // Rainbow gradient
+        const step = 1 / (bgGradientColors.length - 1);
+        for (let i = 0; i < bgGradientColors.length; i++) {
+            bgGradient.addColorStop(i * step, bgGradientColors[i]);
+        }
+    } else {
+        // Normal gradient
+        const rgb = parseColorToRGB(bgColor) || { r: 211, g: 211, b: 211 };
+        const darkerBg = `rgb(${Math.max(0, rgb.r - 20)}, ${Math.max(0, rgb.g - 20)}, ${Math.max(0, rgb.b - 20)})`;
+        bgGradient.addColorStop(0, bgColor);
+        bgGradient.addColorStop(1, darkerBg);
+    }
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -149,11 +170,21 @@ function drawGame() {
             
             // Draw platform with gradient
             const platGradient = ctx.createLinearGradient(screenX, platform.y, screenX, platform.y + platform.height);
-            const platRgb = parseColorToRGB(platformColor) || { r: 105, g: 105, b: 105 };
-            const lighterPlat = `rgb(${Math.min(255, platRgb.r + 30)}, ${Math.min(255, platRgb.g + 30)}, ${Math.min(255, platRgb.b + 30)})`;
-            const darkerPlat = `rgb(${Math.max(0, platRgb.r - 15)}, ${Math.max(0, platRgb.g - 15)}, ${Math.max(0, platRgb.b - 15)})`;
-            platGradient.addColorStop(0, lighterPlat);
-            platGradient.addColorStop(1, darkerPlat);
+            const platGradientColors = getGradientColors('platform');
+            if (platGradientColors && platGradientColors.length > 1) {
+                // Rainbow gradient
+                const step = 1 / (platGradientColors.length - 1);
+                for (let i = 0; i < platGradientColors.length; i++) {
+                    platGradient.addColorStop(i * step, platGradientColors[i]);
+                }
+            } else {
+                // Normal gradient
+                const platRgb = parseColorToRGB(platformColor) || { r: 105, g: 105, b: 105 };
+                const lighterPlat = `rgb(${Math.min(255, platRgb.r + 30)}, ${Math.min(255, platRgb.g + 30)}, ${Math.min(255, platRgb.b + 30)})`;
+                const darkerPlat = `rgb(${Math.max(0, platRgb.r - 15)}, ${Math.max(0, platRgb.g - 15)}, ${Math.max(0, platRgb.b - 15)})`;
+                platGradient.addColorStop(0, lighterPlat);
+                platGradient.addColorStop(1, darkerPlat);
+            }
             ctx.fillStyle = platGradient;
             ctx.fillRect(screenX, platform.y, platform.width, platform.height);
             
@@ -186,24 +217,42 @@ function drawGame() {
     ctx.fill();
     ctx.restore();
     
-    // Get player color
+    // Get player color and gradient
     const playerRgb = parseColorToRGB(playerColor) || { r: 128, g: 128, b: 128 };
+    const playerGradientColors = getGradientColors('player');
     
     // Draw player glow
     if (!player.onGround) {
         const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, player.width * 0.8);
-        glowGradient.addColorStop(0, `rgba(${playerRgb.r}, ${playerRgb.g}, ${playerRgb.b}, 0.4)`);
-        glowGradient.addColorStop(1, `rgba(${playerRgb.r}, ${playerRgb.g}, ${playerRgb.b}, 0)`);
+        if (playerGradientColors && playerGradientColors.length > 1) {
+            // Use first and middle colors of rainbow for glow
+            const firstColor = parseColorToRGB(playerGradientColors[0]) || { r: 255, g: 0, b: 0 };
+            const midColor = parseColorToRGB(playerGradientColors[Math.floor(playerGradientColors.length / 2)]) || { r: 255, g: 255, b: 0 };
+            glowGradient.addColorStop(0, `rgba(${firstColor.r}, ${firstColor.g}, ${firstColor.b}, 0.4)`);
+            glowGradient.addColorStop(1, `rgba(${midColor.r}, ${midColor.g}, ${midColor.b}, 0)`);
+        } else {
+            glowGradient.addColorStop(0, `rgba(${playerRgb.r}, ${playerRgb.g}, ${playerRgb.b}, 0.4)`);
+            glowGradient.addColorStop(1, `rgba(${playerRgb.r}, ${playerRgb.g}, ${playerRgb.b}, 0)`);
+        }
         ctx.fillStyle = glowGradient;
         ctx.fillRect(-player.width * 0.6, -player.height * 0.6, player.width * 1.2, player.height * 1.2);
     }
     
     // Draw player body with gradient
     const playerGradient = ctx.createLinearGradient(-player.width / 2, -player.height / 2, player.width / 2, player.height / 2);
-    const lighterPlayer = `rgb(${Math.min(255, playerRgb.r + 40)}, ${Math.min(255, playerRgb.g + 40)}, ${Math.min(255, playerRgb.b + 40)})`;
-    const darkerPlayer = `rgb(${Math.max(0, playerRgb.r - 20)}, ${Math.max(0, playerRgb.g - 20)}, ${Math.max(0, playerRgb.b - 20)})`;
-    playerGradient.addColorStop(0, lighterPlayer);
-    playerGradient.addColorStop(1, darkerPlayer);
+    if (playerGradientColors && playerGradientColors.length > 1) {
+        // Rainbow gradient
+        const step = 1 / (playerGradientColors.length - 1);
+        for (let i = 0; i < playerGradientColors.length; i++) {
+            playerGradient.addColorStop(i * step, playerGradientColors[i]);
+        }
+    } else {
+        // Normal gradient
+        const lighterPlayer = `rgb(${Math.min(255, playerRgb.r + 40)}, ${Math.min(255, playerRgb.g + 40)}, ${Math.min(255, playerRgb.b + 40)})`;
+        const darkerPlayer = `rgb(${Math.max(0, playerRgb.r - 20)}, ${Math.max(0, playerRgb.g - 20)}, ${Math.max(0, playerRgb.b - 20)})`;
+        playerGradient.addColorStop(0, lighterPlayer);
+        playerGradient.addColorStop(1, darkerPlayer);
+    }
     ctx.fillStyle = playerGradient;
     
     // Draw rounded rectangle for player
@@ -218,17 +267,6 @@ function drawGame() {
     ctx.quadraticCurveTo(-player.width / 2, player.height / 2, -player.width / 2, player.height / 2 - radius);
     ctx.lineTo(-player.width / 2, -player.height / 2 + radius);
     ctx.quadraticCurveTo(-player.width / 2, -player.height / 2, -player.width / 2 + radius, -player.height / 2);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Draw highlight on player
-    ctx.fillStyle = `rgba(255, 255, 255, 0.3)`;
-    ctx.beginPath();
-    ctx.moveTo(-player.width / 2 + radius, -player.height / 2);
-    ctx.lineTo(player.width / 2 - radius, -player.height / 2);
-    ctx.quadraticCurveTo(player.width / 2, -player.height / 2, player.width / 2, -player.height / 2 + radius);
-    ctx.lineTo(player.width / 3, -player.height / 3);
-    ctx.lineTo(-player.width / 3, -player.height / 3);
     ctx.closePath();
     ctx.fill();
     
@@ -252,9 +290,18 @@ function drawGame() {
             
             // Draw food glow
             const foodRgb = parseColorToRGB(foodColor) || { r: 169, g: 169, b: 169 };
+            const foodGradientColors = getGradientColors('points');
             const glowGrad = ctx.createRadialGradient(foodCenterX, foodCenterY, 0, foodCenterX, foodCenterY, food.width * 0.8);
-            glowGrad.addColorStop(0, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0.6)`);
-            glowGrad.addColorStop(1, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0)`);
+            if (foodGradientColors && foodGradientColors.length > 1) {
+                // Use first and middle colors of rainbow for glow
+                const firstColor = parseColorToRGB(foodGradientColors[0]) || { r: 255, g: 0, b: 0 };
+                const midColor = parseColorToRGB(foodGradientColors[Math.floor(foodGradientColors.length / 2)]) || { r: 255, g: 255, b: 0 };
+                glowGrad.addColorStop(0, `rgba(${firstColor.r}, ${firstColor.g}, ${firstColor.b}, 0.6)`);
+                glowGrad.addColorStop(1, `rgba(${midColor.r}, ${midColor.g}, ${midColor.b}, 0)`);
+            } else {
+                glowGrad.addColorStop(0, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0.6)`);
+                glowGrad.addColorStop(1, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0)`);
+            }
             ctx.fillStyle = glowGrad;
             ctx.fillRect(screenX - 3, foodY - 3, food.width + 6, food.height + 6);
             
@@ -273,10 +320,19 @@ function drawGame() {
                 foodCenterY, 
                 food.width * 0.7
             );
-            const lighterFood = `rgb(${Math.min(255, foodRgb.r + 50)}, ${Math.min(255, foodRgb.g + 50)}, ${Math.min(255, foodRgb.b + 50)})`;
-            const darkerFood = `rgb(${Math.max(0, foodRgb.r - 10)}, ${Math.max(0, foodRgb.g - 10)}, ${Math.max(0, foodRgb.b - 10)})`;
-            foodGradient.addColorStop(0, lighterFood);
-            foodGradient.addColorStop(1, darkerFood);
+            if (foodGradientColors && foodGradientColors.length > 1) {
+                // Rainbow gradient - use all colors in a radial pattern
+                const step = 1 / (foodGradientColors.length - 1);
+                for (let i = 0; i < foodGradientColors.length; i++) {
+                    foodGradient.addColorStop(i * step, foodGradientColors[i]);
+                }
+            } else {
+                // Normal gradient
+                const lighterFood = `rgb(${Math.min(255, foodRgb.r + 50)}, ${Math.min(255, foodRgb.g + 50)}, ${Math.min(255, foodRgb.b + 50)})`;
+                const darkerFood = `rgb(${Math.max(0, foodRgb.r - 10)}, ${Math.max(0, foodRgb.g - 10)}, ${Math.max(0, foodRgb.b - 10)})`;
+                foodGradient.addColorStop(0, lighterFood);
+                foodGradient.addColorStop(1, darkerFood);
+            }
             ctx.fillStyle = foodGradient;
             ctx.beginPath();
             ctx.arc(foodCenterX, foodCenterY, food.width / 2, 0, Math.PI * 2);
@@ -434,44 +490,57 @@ const shopItemsDiv = document.getElementById('shop-items');
 const closeShopBtn = document.getElementById('close-shop');
 
 // Skin items replace the previous upgrade items. Each skin changes game colors.
+// Rarity: 'common', 'rare', 'epic', 'legendary'
 const shopItems = [
     // Player skins
-    { id: 'player_classic', type: 'player', name: 'Player Classic', desc: 'Default player color', price: 0, purchased: true, color: '#808080' },
-    { id: 'player_mint', type: 'player', name: 'Player Mint', desc: 'Cool mint tone', price: 90, purchased: false, color: '#b8f2e6' },
-    { id: 'player_blue', type: 'player', name: 'Player Blue', desc: 'Cool blue player', price: 150, purchased: false, color: '#9fb4ff' },
-    { id: 'player_red', type: 'player', name: 'Player Red', desc: 'Fiery red player', price: 160, purchased: false, color: '#ff6b6b' },
-    { id: 'player_neon', type: 'player', name: 'Player Neon', desc: 'Bright neon player', price: 220, purchased: false, color: '#39ff14' },
-    { id: 'player_ghost', type: 'player', name: 'Player Ghost', desc: 'Pale translucent look', price: 200, purchased: false, color: '#cfcfe8' },
-    { id: 'player_gold', type: 'player', name: 'Player Gold', desc: 'Premium gold skin', price: 300, purchased: false, color: '#ffd166' },
+    { id: 'player_classic', type: 'player', name: 'Classic', desc: 'Default player color', price: 0, purchased: true, color: '#808080', rarity: 'common' },
+    { id: 'player_mint', type: 'player', name: 'Mint Fresh', desc: 'Cool refreshing mint tone', price: 90, purchased: false, color: '#b8f2e6', rarity: 'common' },
+    { id: 'player_blue', type: 'player', name: 'Ocean Blue', desc: 'Deep ocean blue', price: 150, purchased: false, color: '#9fb4ff', rarity: 'rare' },
+    { id: 'player_red', type: 'player', name: 'Fire Red', desc: 'Burning crimson flames', price: 160, purchased: false, color: '#ff6b6b', rarity: 'rare' },
+    { id: 'player_purple', type: 'player', name: 'Royal Purple', desc: 'Majestic purple hue', price: 180, purchased: false, color: '#9b59b6', rarity: 'rare' },
+    { id: 'player_emerald', type: 'player', name: 'Emerald', desc: 'Precious green gem', price: 190, purchased: false, color: '#2ecc71', rarity: 'rare' },
+    { id: 'player_neon', type: 'player', name: 'Neon Glow', desc: 'Electric neon green', price: 220, purchased: false, color: '#39ff14', rarity: 'epic' },
+    { id: 'player_ghost', type: 'player', name: 'Ghost', desc: 'Ethereal translucent form', price: 200, purchased: false, color: '#cfcfe8', rarity: 'epic' },
+    { id: 'player_rainbow', type: 'player', name: 'Rainbow', desc: 'Magical rainbow spectrum', price: 350, purchased: false, color: '#ff0000', rarity: 'legendary', gradient: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'] },
+    { id: 'player_gold', type: 'player', name: 'Golden King', desc: 'Premium legendary gold', price: 400, purchased: false, color: '#ffd166', rarity: 'legendary' },
 
     // Background skins
-    { id: 'bg_classic', type: 'background', name: 'Background Classic', desc: 'Default background', price: 0, purchased: true, color: '#D3D3D3' },
-    { id: 'bg_pastel', type: 'background', name: 'Background Pastel', desc: 'Soft pastel backdrop', price: 95, purchased: false, color: '#f7e7ff' },
-    { id: 'bg_midnight', type: 'background', name: 'Background Midnight', desc: 'Dark night sky', price: 150, purchased: false, color: '#1b1f2b' },
-    { id: 'bg_forest', type: 'background', name: 'Background Forest', desc: 'Misty forest green', price: 170, purchased: false, color: '#d6eadf' },
-    { id: 'bg_sunset', type: 'background', name: 'Background Sunset', desc: 'Warm sunset sky', price: 180, purchased: false, color: '#fff1e6' },
-    { id: 'bg_neon', type: 'background', name: 'Background Neon', desc: 'Dark neon backdrop', price: 200, purchased: false, color: '#7f00ff' },
-    { id: 'bg_space', type: 'background', name: 'Background Space', desc: 'Deep space/violet', price: 210, purchased: false, color: '#2b0f4a' },
+    { id: 'bg_classic', type: 'background', name: 'Classic', desc: 'Default background', price: 0, purchased: true, color: '#D3D3D3', rarity: 'common' },
+    { id: 'bg_pastel', type: 'background', name: 'Pastel Dream', desc: 'Soft pastel paradise', price: 95, purchased: false, color: '#f7e7ff', rarity: 'common' },
+    { id: 'bg_ocean', type: 'background', name: 'Ocean Breeze', desc: 'Calming ocean waves', price: 120, purchased: false, color: '#a8d8ea', rarity: 'common' },
+    { id: 'bg_midnight', type: 'background', name: 'Midnight', desc: 'Dark starry night', price: 150, purchased: false, color: '#1b1f2b', rarity: 'rare' },
+    { id: 'bg_forest', type: 'background', name: 'Misty Forest', desc: 'Enchanted forest mist', price: 170, purchased: false, color: '#d6eadf', rarity: 'rare' },
+    { id: 'bg_sunset', type: 'background', name: 'Sunset Sky', desc: 'Warm golden sunset', price: 180, purchased: false, color: '#fff1e6', rarity: 'rare' },
+    { id: 'bg_lavender', type: 'background', name: 'Lavender Fields', desc: 'Serene lavender fields', price: 190, purchased: false, color: '#e6d9f2', rarity: 'rare' },
+    { id: 'bg_neon', type: 'background', name: 'Neon Night', desc: 'Vibrant neon city', price: 200, purchased: false, color: '#7f00ff', rarity: 'epic' },
+    { id: 'bg_space', type: 'background', name: 'Deep Space', desc: 'Infinite cosmos', price: 250, purchased: false, color: '#2b0f4a', rarity: 'epic' },
+    { id: 'bg_void', type: 'background', name: 'The Void', desc: 'Endless darkness', price: 400, purchased: false, color: '#000000', rarity: 'legendary' },
 
     // Platform skins
-    { id: 'plat_classic', type: 'platform', name: 'Platform Classic', desc: 'Default platforms', price: 0, purchased: true, color: '#696969' },
-    { id: 'plat_moss', type: 'platform', name: 'Platform Moss', desc: 'Mossy stone', price: 110, purchased: false, color: '#6b8e23' },
-    { id: 'plat_wood', type: 'platform', name: 'Platform Wood', desc: 'Warm wooden platform', price: 120, purchased: false, color: '#8B4513' },
-    { id: 'plat_stone', type: 'platform', name: 'Platform Stone', desc: 'Rough stone look', price: 140, purchased: false, color: '#7d7d7d' },
-    { id: 'plat_steel', type: 'platform', name: 'Platform Steel', desc: 'Cool steel platform', price: 160, purchased: false, color: '#2e3545' },
-    { id: 'plat_glass', type: 'platform', name: 'Platform Glass', desc: 'Semi-transparent glass', price: 200, purchased: false, color: 'rgba(180,200,230,0.85)' },
-    { id: 'plat_gold', type: 'platform', name: 'Platform Gold', desc: 'Shiny gold platform', price: 280, purchased: false, color: '#d4af37' }
+    { id: 'plat_classic', type: 'platform', name: 'Classic', desc: 'Default platforms', price: 0, purchased: true, color: '#696969', rarity: 'common' },
+    { id: 'plat_moss', type: 'platform', name: 'Mossy Stone', desc: 'Ancient moss-covered', price: 110, purchased: false, color: '#6b8e23', rarity: 'common' },
+    { id: 'plat_wood', type: 'platform', name: 'Oak Wood', desc: 'Rustic wooden planks', price: 120, purchased: false, color: '#8B4513', rarity: 'common' },
+    { id: 'plat_stone', type: 'platform', name: 'Stone Slabs', desc: 'Carved stone blocks', price: 140, purchased: false, color: '#7d7d7d', rarity: 'rare' },
+    { id: 'plat_marble', type: 'platform', name: 'Marble', desc: 'Elegant white marble', price: 160, purchased: false, color: '#f5f5dc', rarity: 'rare' },
+    { id: 'plat_steel', type: 'platform', name: 'Steel', desc: 'Industrial steel beams', price: 170, purchased: false, color: '#2e3545', rarity: 'rare' },
+    { id: 'plat_crystal', type: 'platform', name: 'Crystal', desc: 'Shimmering crystal', price: 210, purchased: false, color: '#b0e0e6', rarity: 'epic' },
+    { id: 'plat_glass', type: 'platform', name: 'Glass', desc: 'Transparent glass', price: 220, purchased: false, color: 'rgba(180,200,230,0.85)', rarity: 'epic' },
+    { id: 'plat_diamond', type: 'platform', name: 'Diamond', desc: 'Rare diamond platforms', price: 380, purchased: false, color: '#b9f2ff', rarity: 'legendary' },
+    { id: 'plat_gold', type: 'platform', name: 'Golden', desc: 'Luxurious gold platforms', price: 400, purchased: false, color: '#d4af37', rarity: 'legendary' }
 ];
 
 // Point/item color skins
 shopItems.push(
-    { id: 'pt_classic', type: 'points', name: 'Point Classic', desc: 'Default point color', price: 0, purchased: true, color: '#A9A9A9' },
-    { id: 'pt_yellow', type: 'points', name: 'Point Yellow', desc: 'Bright yellow point', price: 80, purchased: false, color: '#ffd54f' },
-    { id: 'pt_orange', type: 'points', name: 'Point Orange', desc: 'Vibrant orange', price: 120, purchased: false, color: '#ff8a65' },
-    { id: 'pt_pink', type: 'points', name: 'Point Pink', desc: 'Soft pink point', price: 140, purchased: false, color: '#ff6bcb' },
-    { id: 'pt_cyan', type: 'points', name: 'Point Cyan', desc: 'Cool cyan point', price: 160, purchased: false, color: '#4dd0e1' },
-    { id: 'pt_neon', type: 'points', name: 'Point Neon', desc: 'Neon highlight', price: 220, purchased: false, color: '#39ff14' },
-    { id: 'pt_gold', type: 'points', name: 'Point Gold', desc: 'Premium gold point', price: 300, purchased: false, color: '#ffd166' }
+    { id: 'pt_classic', type: 'points', name: 'Classic', desc: 'Default point color', price: 0, purchased: true, color: '#A9A9A9', rarity: 'common' },
+    { id: 'pt_yellow', type: 'points', name: 'Sunshine', desc: 'Bright golden yellow', price: 80, purchased: false, color: '#ffd54f', rarity: 'common' },
+    { id: 'pt_orange', type: 'points', name: 'Flame', desc: 'Burning orange fire', price: 120, purchased: false, color: '#ff8a65', rarity: 'rare' },
+    { id: 'pt_pink', type: 'points', name: 'Cherry Blossom', desc: 'Delicate pink petals', price: 140, purchased: false, color: '#ff6bcb', rarity: 'rare' },
+    { id: 'pt_cyan', type: 'points', name: 'Aqua', desc: 'Cool ocean cyan', price: 160, purchased: false, color: '#4dd0e1', rarity: 'rare' },
+    { id: 'pt_lime', type: 'points', name: 'Lime Zest', desc: 'Electric lime green', price: 180, purchased: false, color: '#cfff04', rarity: 'rare' },
+    { id: 'pt_neon', type: 'points', name: 'Neon Pulse', desc: 'Glowing neon green', price: 220, purchased: false, color: '#39ff14', rarity: 'epic' },
+    { id: 'pt_plasma', type: 'points', name: 'Plasma', desc: 'Magical plasma energy', price: 280, purchased: false, color: '#ff0080', rarity: 'epic' },
+    { id: 'pt_rainbow', type: 'points', name: 'Rainbow Shard', desc: 'Prismatic rainbow', price: 350, purchased: false, color: '#ff0000', rarity: 'legendary', gradient: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'] },
+    { id: 'pt_gold', type: 'points', name: 'Midas Touch', desc: 'Legendary pure gold', price: 400, purchased: false, color: '#ffd166', rarity: 'legendary' }
 );
 
 // Effects are added below via a normalization IIFE (run/jump-only set)
@@ -485,15 +554,17 @@ shopItems.push(
     }
     // push a fresh set of unique effects (run/jump only)
     shopItems.push(
-        { id: 'ef_none', type: 'effects', name: 'No Effect', desc: 'No special effects', price: 0, purchased: true, appliesTo: ['run','jump'], effectSpec: { type: 'none' } },
-        { id: 'ef_trail_glow', type: 'effects', name: 'Trail Glow', desc: 'Soft glowing trail', price: 80, purchased: false, effectSpec: { type: 'trail', color: '#80deea', count: 6, life: 50, spacing: 6, freq: 4 }, appliesTo: ['run','jump'] },
-        { id: 'ef_orbit_lines', type: 'effects', name: 'Orbit Lines', desc: 'Lines orbiting the player', price: 200, purchased: false, effectSpec: { type: 'orbit', color: '#ffd54f', rings: 2, perRing: 6, radii: [12, 26], speed: 0.03, lineLength: 12, thickness: 2 }, appliesTo: ['run','jump'] },
-        { id: 'ef_shock_runner', type: 'effects', name: 'Shock Ripples', desc: 'Subtle ground ripples', price: 120, purchased: false, effectSpec: { type: 'shock', color: 'rgba(160,200,255,0.6)', count: 2, radius: 12, life: 30 }, appliesTo: ['run','jump'] },
-        { id: 'ef_smoke_trail', type: 'effects', name: 'Smoke Trail', desc: 'Small smoke puffs', price: 90, purchased: false, effectSpec: { type: 'smoke', color: 'rgba(120,120,120,0.6)', count: 2, life: 50, size: 8, freq: 8 }, appliesTo: ['run','jump'] },
-        { id: 'ef_burst_jump', type: 'effects', name: 'Jump Burst', desc: 'Burst of particles', price: 150, purchased: false, effectSpec: { type: 'burst', color: '#ff8a65', count: 20, spread: 220, speed: 2.0, life: 45, freq: 40 }, appliesTo: ['run','jump'] },
-        { id: 'ef_confetti_jump', type: 'effects', name: 'Confetti', desc: 'Colorful confetti', price: 180, purchased: false, effectSpec: { type: 'confetti', colors: ['#ffd54f','#ff8a65','#4dd0e1','#ff6bcb'], count: 20, size: 6, life: 60, speed: 2.4, freq: 50 }, appliesTo: ['run','jump'] },
-        { id: 'ef_halo', type: 'effects', name: 'Glow Halo', desc: 'Pulsing ring', price: 160, purchased: false, effectSpec: { type: 'halo', color: '#7f00ff', radius: 18, life: 40, freq: 40 }, appliesTo: ['run','jump'] },
-        { id: 'ef_gold_sparkle', type: 'effects', name: 'Gold Sparkle', desc: 'Gold sparkles', price: 220, purchased: false, effectSpec: { type: 'sparkle', color: '#ffd166', count: 6, size: 4, life: 50, freq: 20 }, appliesTo: ['run','jump'] }
+        { id: 'ef_none', type: 'effects', name: 'None', desc: 'No special effects', price: 0, purchased: true, appliesTo: ['run','jump'], effectSpec: { type: 'none' }, rarity: 'common' },
+        { id: 'ef_trail_glow', type: 'effects', name: 'Trail Glow', desc: 'Soft glowing light trail', price: 80, purchased: false, effectSpec: { type: 'trail', color: '#80deea', count: 6, life: 50, spacing: 6, freq: 4 }, appliesTo: ['run','jump'], rarity: 'common' },
+        { id: 'ef_smoke_trail', type: 'effects', name: 'Smoke Trail', desc: 'Mysterious smoke puffs', price: 90, purchased: false, effectSpec: { type: 'smoke', color: 'rgba(120,120,120,0.6)', count: 2, life: 50, size: 8, freq: 8 }, appliesTo: ['run','jump'], rarity: 'common' },
+        { id: 'ef_shock_runner', type: 'effects', name: 'Shock Ripples', desc: 'Electric ground ripples', price: 120, purchased: false, effectSpec: { type: 'shock', color: 'rgba(160,200,255,0.6)', count: 2, radius: 12, life: 30 }, appliesTo: ['run','jump'], rarity: 'rare' },
+        { id: 'ef_burst_jump', type: 'effects', name: 'Particle Burst', desc: 'Explosive particle burst', price: 150, purchased: false, effectSpec: { type: 'burst', color: '#ff8a65', count: 20, spread: 220, speed: 2.0, life: 45, freq: 40 }, appliesTo: ['run','jump'], rarity: 'rare' },
+        { id: 'ef_halo', type: 'effects', name: 'Glow Halo', desc: 'Mystical pulsing aura', price: 160, purchased: false, effectSpec: { type: 'halo', color: '#7f00ff', radius: 18, life: 40, freq: 40 }, appliesTo: ['run','jump'], rarity: 'rare' },
+        { id: 'ef_confetti_jump', type: 'effects', name: 'Confetti', desc: 'Celebratory confetti', price: 180, purchased: false, effectSpec: { type: 'confetti', colors: ['#ffd54f','#ff8a65','#4dd0e1','#ff6bcb'], count: 20, size: 6, life: 60, speed: 2.4, freq: 50 }, appliesTo: ['run','jump'], rarity: 'epic' },
+        { id: 'ef_orbit_lines', type: 'effects', name: 'Orbit Lines', desc: 'Cosmic orbiting lines', price: 200, purchased: false, effectSpec: { type: 'orbit', color: '#ffd54f', rings: 2, perRing: 6, radii: [12, 26], speed: 0.03, lineLength: 12, thickness: 2 }, appliesTo: ['run','jump'], rarity: 'epic' },
+        { id: 'ef_gold_sparkle', type: 'effects', name: 'Gold Sparkle', desc: 'Luxurious gold sparkles', price: 220, purchased: false, effectSpec: { type: 'sparkle', color: '#ffd166', count: 6, size: 4, life: 50, freq: 20 }, appliesTo: ['run','jump'], rarity: 'epic' },
+        { id: 'ef_stardust', type: 'effects', name: 'Stardust', desc: 'Magical stardust trail', price: 300, purchased: false, effectSpec: { type: 'sparkle', color: '#ffffff', count: 10, size: 3, life: 60, freq: 15 }, appliesTo: ['run','jump'], rarity: 'legendary' },
+        { id: 'ef_rainbow_trail', type: 'effects', name: 'Rainbow Trail', desc: 'Legendary rainbow trail', price: 400, purchased: false, effectSpec: { type: 'trail', color: '#ff0000', colors: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'], count: 12, life: 60, spacing: 4, freq: 3 }, appliesTo: ['run','jump'], rarity: 'legendary' }
         );
     })();
 
@@ -676,6 +747,7 @@ function getEffectById(id) {
 
 // spawn move effect based on selectedEffects.run (only when player is moving on ground)
 let moveSpawnCounter = 0;
+let trailColorIndex = 0; // For cycling through rainbow colors
 function maybeSpawnMoveEffect() {
     const id = selectedEffects.run; // uses the 'run' slot for move effects
     if (!id) return;
@@ -691,12 +763,20 @@ function maybeSpawnMoveEffect() {
     const spec = item.effectSpec;
     switch (spec.type) {
         case 'trail':
+            // Check if rainbow colors are available
+            const trailColors = spec.colors && Array.isArray(spec.colors) ? spec.colors : null;
             for (let i = 0; i < (spec.count || 4); i++) {
                 const rx = px - player.vx * (0.5 + Math.random());
                 const ry = py + (Math.random() - 0.5) * 6;
                 const vx = -player.vx * 0.2 + (Math.random() - 0.5) * 0.6;
                 const vy = -0.2 + (Math.random() - 0.5) * 0.4;
-                spawnParticle(rx, ry, vx, vy, spec.life || 40, spec.size || 4, spec.color || '#fff');
+                // Cycle through rainbow colors if available, otherwise use single color
+                let particleColor = spec.color || '#fff';
+                if (trailColors && trailColors.length > 0) {
+                    particleColor = trailColors[trailColorIndex % trailColors.length];
+                    trailColorIndex = (trailColorIndex + 1) % trailColors.length;
+                }
+                spawnParticle(rx, ry, vx, vy, spec.life || 40, spec.size || 4, particleColor);
             }
             break;
         case 'smoke':
@@ -769,6 +849,23 @@ function spawnJumpEffect() {
     const py = player.y + player.height;
     const spec = item.effectSpec;
     switch (spec.type) {
+        case 'trail':
+            // Check if rainbow colors are available
+            const jumpTrailColors = spec.colors && Array.isArray(spec.colors) ? spec.colors : null;
+            for (let i = 0; i < (spec.count || 4); i++) {
+                const rx = px - player.vx * (0.5 + Math.random());
+                const ry = py + (Math.random() - 0.5) * 6;
+                const vx = -player.vx * 0.2 + (Math.random() - 0.5) * 0.6;
+                const vy = -0.2 + (Math.random() - 0.5) * 0.4;
+                // Cycle through rainbow colors if available, otherwise use single color
+                let particleColor = spec.color || '#fff';
+                if (jumpTrailColors && jumpTrailColors.length > 0) {
+                    particleColor = jumpTrailColors[trailColorIndex % jumpTrailColors.length];
+                    trailColorIndex = (trailColorIndex + 1) % jumpTrailColors.length;
+                }
+                spawnParticle(rx, ry, vx, vy, spec.life || 40, spec.size || 4, particleColor);
+            }
+            break;
         case 'burst':
             for (let i = 0; i < (spec.count || 12); i++) {
                 const ang = -Math.PI/2 + (Math.random() - 0.5) * (Math.PI * 2);
@@ -817,8 +914,25 @@ function maybeSpawnAirEffect() {
     const px = player.x + player.width / 2;
     const py = player.y + player.height;
     const spec = item.effectSpec;
-    // continuous airborne effects: sparkle, smoke-like drift
+    // continuous airborne effects: sparkle, smoke-like drift, trail
     switch (spec.type) {
+        case 'trail':
+            // Check if rainbow colors are available
+            const airTrailColors = spec.colors && Array.isArray(spec.colors) ? spec.colors : null;
+            for (let i = 0; i < (spec.count || 4); i++) {
+                const rx = px - player.vx * (0.5 + Math.random());
+                const ry = py + (Math.random() - 0.5) * 6;
+                const vx = -player.vx * 0.2 + (Math.random() - 0.5) * 0.6;
+                const vy = -0.2 + (Math.random() - 0.5) * 0.4;
+                // Cycle through rainbow colors if available, otherwise use single color
+                let particleColor = spec.color || '#fff';
+                if (airTrailColors && airTrailColors.length > 0) {
+                    particleColor = airTrailColors[trailColorIndex % airTrailColors.length];
+                    trailColorIndex = (trailColorIndex + 1) % airTrailColors.length;
+                }
+                spawnParticle(rx, ry, vx, vy, spec.life || 40, spec.size || 4, particleColor);
+            }
+            break;
         case 'sparkle':
             for (let i = 0; i < (spec.count || 4); i++) {
                 const vx = (Math.random() - 0.5) * 1.2;
@@ -891,19 +1005,52 @@ function renderShop() {
     for (let item of itemsForCat) {
         const row = document.createElement('div');
         row.className = 'shop-item';
+        const rarity = item.rarity || 'common';
+        row.setAttribute('data-rarity', rarity);
+        row.setAttribute('data-purchased', item.purchased);
+        
+        // Determine selected state
+        let isSelected = false;
+        if (category === 'points') isSelected = selectedSkins.points === item.id;
+        else if (category === 'effects') {
+            isSelected = selectedEffects.run === item.id || selectedEffects.jump === item.id;
+        } else {
+            isSelected = selectedSkins[category] === item.id;
+        }
+        row.setAttribute('data-selected', isSelected);
 
         const swatch = document.createElement('div');
         swatch.className = 'swatch';
-        swatch.style.background = item.color || (item.effectSpec && item.effectSpec.color) || '#ccc';
+        // Handle gradient colors
+        if (item.gradient && Array.isArray(item.gradient)) {
+            const gradientStr = `linear-gradient(135deg, ${item.gradient.join(', ')})`;
+            swatch.style.background = gradientStr;
+        } else {
+            swatch.style.background = item.color || (item.effectSpec && item.effectSpec.color) || '#ccc';
+        }
 
         const meta = document.createElement('div');
         meta.className = 'meta';
         const title = document.createElement('div');
+        title.className = 'item-title';
         title.textContent = item.name;
+        
+        // Add rarity badge
+        if (item.rarity && item.rarity !== 'common') {
+            const rarityBadge = document.createElement('span');
+            rarityBadge.className = `rarity-badge rarity-${item.rarity}`;
+            rarityBadge.textContent = item.rarity;
+            title.appendChild(rarityBadge);
+        }
+        
         const desc = document.createElement('div');
-        desc.style.fontSize = '12px';
-        desc.style.opacity = '0.8';
-        desc.textContent = item.desc + ` ${item.price > 0 ? '— ' + item.price + ' pt' : ''}`;
+        desc.className = 'item-desc';
+        desc.textContent = item.desc;
+        const priceText = document.createElement('span');
+        priceText.style.fontWeight = '600';
+        priceText.textContent = item.price > 0 ? ` — ${item.price} pt` : ' — FREE';
+        desc.appendChild(priceText);
+        
         meta.appendChild(title);
         meta.appendChild(desc);
 
@@ -914,16 +1061,13 @@ function renderShop() {
 
         const btn = document.createElement('button');
         btn.className = 'buy-btn';
-            // Determine selected state
-        let isSelected = false;
-        if (category === 'points') isSelected = selectedSkins.points === item.id;
-        else if (category === 'effects') {
-            // selected if applied to either idle or jump
-                isSelected = selectedEffects.run === item.id || selectedEffects.jump === item.id;
-        } else {
-            isSelected = selectedSkins[category] === item.id;
+        if (rarity === 'legendary') {
+            btn.classList.add('legendary');
         }
-        btn.textContent = item.purchased ? (isSelected ? 'Selected' : 'Select') : (item.price > 0 ? 'Buy' : 'Select');
+        btn.textContent = item.purchased ? (isSelected ? 'Selected' : 'Select') : (item.price > 0 ? `Buy ${item.price}pt` : 'Select');
+        if (isSelected && item.purchased) {
+            btn.classList.add('selected');
+        }
         btn.disabled = (!item.purchased && score < item.price);
         btn.addEventListener('click', () => {
                 if (!item.purchased) {
