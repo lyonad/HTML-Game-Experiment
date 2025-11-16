@@ -129,19 +129,46 @@ function generateFood(allowInView = false) {
 }
 
 function drawGame() {
-    ctx.fillStyle = bgColor; // background color (skin)
+    // Draw background with gradient
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    const rgb = parseColorToRGB(bgColor) || { r: 211, g: 211, b: 211 };
+    const darkerBg = `rgb(${Math.max(0, rgb.r - 20)}, ${Math.max(0, rgb.g - 20)}, ${Math.max(0, rgb.b - 20)})`;
+    bgGradient.addColorStop(0, bgColor);
+    bgGradient.addColorStop(1, darkerBg);
+    ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw platforms
+    // Draw platforms with shadows and depth
     ctx.fillStyle = platformColor; // platform color (skin)
     for (let platform of platforms) {
         const screenX = platform.x - camera.x;
         if (screenX + platform.width > 0 && screenX < canvas.width) {
+            // Draw shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(screenX + 3, platform.y + 3, platform.width, platform.height);
+            
+            // Draw platform with gradient
+            const platGradient = ctx.createLinearGradient(screenX, platform.y, screenX, platform.y + platform.height);
+            const platRgb = parseColorToRGB(platformColor) || { r: 105, g: 105, b: 105 };
+            const lighterPlat = `rgb(${Math.min(255, platRgb.r + 30)}, ${Math.min(255, platRgb.g + 30)}, ${Math.min(255, platRgb.b + 30)})`;
+            const darkerPlat = `rgb(${Math.max(0, platRgb.r - 15)}, ${Math.max(0, platRgb.g - 15)}, ${Math.max(0, platRgb.b - 15)})`;
+            platGradient.addColorStop(0, lighterPlat);
+            platGradient.addColorStop(1, darkerPlat);
+            ctx.fillStyle = platGradient;
             ctx.fillRect(screenX, platform.y, platform.width, platform.height);
+            
+            // Draw highlight on top edge
+            ctx.fillStyle = `rgba(255, 255, 255, 0.15)`;
+            ctx.fillRect(screenX, platform.y, platform.width, 2);
+            
+            // Draw border
+            ctx.strokeStyle = `rgba(0, 0, 0, 0.3)`;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(screenX, platform.y, platform.width, platform.height);
         }
     }
 
-    // Draw player
+    // Draw player with enhanced graphics
     ctx.save();
     const playerScreenX = player.x - camera.x;
     const playerScreenY = player.y;
@@ -149,17 +176,126 @@ function drawGame() {
     const centerY = playerScreenY + player.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(player.rotation);
-    ctx.fillStyle = playerColor; // player color (skin)
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+    
+    // Draw player shadow (always downward)
+    ctx.save();
+    ctx.rotate(-player.rotation);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.beginPath();
+    ctx.ellipse(0, player.height / 2 + 3, player.width * 0.6, player.height * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    // Get player color
+    const playerRgb = parseColorToRGB(playerColor) || { r: 128, g: 128, b: 128 };
+    
+    // Draw player glow
+    if (!player.onGround) {
+        const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, player.width * 0.8);
+        glowGradient.addColorStop(0, `rgba(${playerRgb.r}, ${playerRgb.g}, ${playerRgb.b}, 0.4)`);
+        glowGradient.addColorStop(1, `rgba(${playerRgb.r}, ${playerRgb.g}, ${playerRgb.b}, 0)`);
+        ctx.fillStyle = glowGradient;
+        ctx.fillRect(-player.width * 0.6, -player.height * 0.6, player.width * 1.2, player.height * 1.2);
+    }
+    
+    // Draw player body with gradient
+    const playerGradient = ctx.createLinearGradient(-player.width / 2, -player.height / 2, player.width / 2, player.height / 2);
+    const lighterPlayer = `rgb(${Math.min(255, playerRgb.r + 40)}, ${Math.min(255, playerRgb.g + 40)}, ${Math.min(255, playerRgb.b + 40)})`;
+    const darkerPlayer = `rgb(${Math.max(0, playerRgb.r - 20)}, ${Math.max(0, playerRgb.g - 20)}, ${Math.max(0, playerRgb.b - 20)})`;
+    playerGradient.addColorStop(0, lighterPlayer);
+    playerGradient.addColorStop(1, darkerPlayer);
+    ctx.fillStyle = playerGradient;
+    
+    // Draw rounded rectangle for player
+    const radius = 4;
+    ctx.beginPath();
+    ctx.moveTo(-player.width / 2 + radius, -player.height / 2);
+    ctx.lineTo(player.width / 2 - radius, -player.height / 2);
+    ctx.quadraticCurveTo(player.width / 2, -player.height / 2, player.width / 2, -player.height / 2 + radius);
+    ctx.lineTo(player.width / 2, player.height / 2 - radius);
+    ctx.quadraticCurveTo(player.width / 2, player.height / 2, player.width / 2 - radius, player.height / 2);
+    ctx.lineTo(-player.width / 2 + radius, player.height / 2);
+    ctx.quadraticCurveTo(-player.width / 2, player.height / 2, -player.width / 2, player.height / 2 - radius);
+    ctx.lineTo(-player.width / 2, -player.height / 2 + radius);
+    ctx.quadraticCurveTo(-player.width / 2, -player.height / 2, -player.width / 2 + radius, -player.height / 2);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Draw highlight on player
+    ctx.fillStyle = `rgba(255, 255, 255, 0.3)`;
+    ctx.beginPath();
+    ctx.moveTo(-player.width / 2 + radius, -player.height / 2);
+    ctx.lineTo(player.width / 2 - radius, -player.height / 2);
+    ctx.quadraticCurveTo(player.width / 2, -player.height / 2, player.width / 2, -player.height / 2 + radius);
+    ctx.lineTo(player.width / 3, -player.height / 3);
+    ctx.lineTo(-player.width / 3, -player.height / 3);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Draw player border
+    ctx.strokeStyle = `rgba(0, 0, 0, 0.4)`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
     ctx.restore();
 
-    // Draw foods
-    ctx.fillStyle = foodColor; // food color (skin)
+    // Draw foods with enhanced graphics
     for (let food of foods) {
         const screenX = food.x - camera.x;
         if (screenX + food.width > 0 && screenX < canvas.width) {
             const yOffset = Math.sin(food.bounceTime) * 5;
-            ctx.fillRect(screenX, food.y + yOffset, food.width, food.height);
+            const foodY = food.y + yOffset;
+            const foodCenterX = screenX + food.width / 2;
+            const foodCenterY = foodY + food.height / 2;
+            
+            ctx.save();
+            
+            // Draw food glow
+            const foodRgb = parseColorToRGB(foodColor) || { r: 169, g: 169, b: 169 };
+            const glowGrad = ctx.createRadialGradient(foodCenterX, foodCenterY, 0, foodCenterX, foodCenterY, food.width * 0.8);
+            glowGrad.addColorStop(0, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0.6)`);
+            glowGrad.addColorStop(1, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0)`);
+            ctx.fillStyle = glowGrad;
+            ctx.fillRect(screenX - 3, foodY - 3, food.width + 6, food.height + 6);
+            
+            // Draw food shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(foodCenterX + 1, foodCenterY + food.height / 2 + 2, food.width * 0.5, food.height * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw food body with gradient
+            const foodGradient = ctx.createRadialGradient(
+                foodCenterX - food.width * 0.2, 
+                foodCenterY - food.height * 0.2, 
+                0,
+                foodCenterX, 
+                foodCenterY, 
+                food.width * 0.7
+            );
+            const lighterFood = `rgb(${Math.min(255, foodRgb.r + 50)}, ${Math.min(255, foodRgb.g + 50)}, ${Math.min(255, foodRgb.b + 50)})`;
+            const darkerFood = `rgb(${Math.max(0, foodRgb.r - 10)}, ${Math.max(0, foodRgb.g - 10)}, ${Math.max(0, foodRgb.b - 10)})`;
+            foodGradient.addColorStop(0, lighterFood);
+            foodGradient.addColorStop(1, darkerFood);
+            ctx.fillStyle = foodGradient;
+            ctx.beginPath();
+            ctx.arc(foodCenterX, foodCenterY, food.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw shine/reflection
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(foodCenterX - food.width * 0.15, foodCenterY - food.height * 0.15, food.width * 0.2, food.height * 0.25, -0.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw border
+            ctx.strokeStyle = `rgba(0, 0, 0, 0.3)`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(foodCenterX, foodCenterY, food.width / 2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.restore();
         }
     }
 
