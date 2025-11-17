@@ -168,7 +168,8 @@ function addFoodToPlatform(platform) {
         y: platform.y - 25,
         width: 15,
         height: 15,
-        bounceTime: 0
+        bounceTime: 0,
+        platform: platform // Track which platform this food is on
     });
 }
 
@@ -506,9 +507,16 @@ function updatePlayer() {
             if (distance >= platform.moveRange) {
                 platform.direction *= -1;
             }
+            const deltaX = platform.x - oldX;
             // Move player with horizontal platform
             if (player.standingOnPlatform === platform) {
-                player.x += platform.x - oldX;
+                player.x += deltaX;
+            }
+            // Move food items on this platform
+            for (let food of foods) {
+                if (food.platform === platform) {
+                    food.x += deltaX;
+                }
             }
         } else if (platform.type === 'movingVertical') {
             // Vertical movement
@@ -518,9 +526,16 @@ function updatePlayer() {
             if (distance >= platform.moveRange) {
                 platform.direction *= -1;
             }
+            const deltaY = platform.y - oldY;
             // Move player with vertical platform
             if (player.standingOnPlatform === platform) {
-                player.y += platform.y - oldY;
+                player.y += deltaY;
+            }
+            // Move food items on this platform
+            for (let food of foods) {
+                if (food.platform === platform) {
+                    food.y += deltaY;
+                }
             }
         }
     }
