@@ -518,6 +518,12 @@ function updatePlayer() {
                     food.x += deltaX;
                 }
             }
+            // Move power-ups on this platform
+            for (let powerUp of powerUps) {
+                if (powerUp.platform === platform) {
+                    powerUp.x += deltaX;
+                }
+            }
         } else if (platform.type === 'movingVertical') {
             // Vertical movement
             const oldY = platform.y;
@@ -537,6 +543,12 @@ function updatePlayer() {
                     food.y += deltaY;
                 }
             }
+            // Move power-ups on this platform
+            for (let powerUp of powerUps) {
+                if (powerUp.platform === platform) {
+                    powerUp.y += deltaY;
+                }
+            }
         }
     }
 
@@ -553,7 +565,8 @@ function updatePlayer() {
             powerUps.push({
                 x: plat.x + plat.width / 2 - 10,
                 y: plat.y - 30,
-                rotation: 0
+                rotation: 0,
+                platform: plat // Track which platform this power-up is on
             });
         }
     }
