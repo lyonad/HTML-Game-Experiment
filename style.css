@@ -410,10 +410,28 @@ body {
     width: 80%;
 }
 
+.game-icon {
+    font-size: 5vw;
+    color: #fff;
+    margin: 0 0 1.5vh 0;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+    animation: bounce 1.5s ease-in-out infinite;
+    line-height: 1;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
 .game-title {
     font-size: 3.5vw;
     font-family: var(--font-display);
-    font-weight: var(--weight-bold);
+    font-weight: 900;
     margin: 0 0 1.8vh 0;
     background: linear-gradient(135deg, #fff 0%, #ccc 100%);
     -webkit-background-clip: text;
@@ -421,6 +439,7 @@ body {
     background-clip: text;
     text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
     letter-spacing: 1.5px;
+    -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
 }
 
 .menu-buttons {
