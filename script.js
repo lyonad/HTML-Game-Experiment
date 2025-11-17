@@ -10,7 +10,7 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 const gravity = 0.5;
-let jumpStrength = -12.5; // kept mutable (unused by skins) - slightly increased for easier gameplay
+let jumpStrength = -12; // kept mutable (unused by skins) - slightly increased for easier gameplay
 let moveSpeed = 5;      // kept mutable (unused by skins)
 const friction = 0.8;
 // effect movement threshold: only spawn move effects when |vx| > this
