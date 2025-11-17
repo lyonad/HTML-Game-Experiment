@@ -444,8 +444,8 @@ function updatePlayer() {
     if (player.x < 0) player.x = 0;
 
     // Game over if fall off screen
-    if (player.y > canvas.height) {
-        resetGame();
+    if (player.y > canvas.height && !isDead) {
+        showDeathScreen();
     }
 }
 
@@ -469,6 +469,12 @@ function checkFoodCollision() {
 const shopOverlay = document.getElementById('shop');
 const shopItemsDiv = document.getElementById('shop-items');
 const closeShopBtn = document.getElementById('close-shop');
+
+// --- Death overlay logic ---
+const deathOverlay = document.getElementById('death-overlay');
+const deathScoreElement = document.getElementById('death-score');
+const restartBtn = document.getElementById('restart-btn');
+let isDead = false;
 
 // Skin items replace the previous upgrade items. Each skin changes game colors.
 // Rarity: 'common', 'rare', 'epic', 'legendary'
@@ -1140,6 +1146,7 @@ function activateCheat() {
 window.addEventListener('beforeunload', saveProgress);
 
 function openShop() {
+    if (isDead) return; // Can't open shop when dead
     renderShop();
     shopOverlay.classList.add('open');
     shopOverlay.setAttribute('aria-hidden', 'false');
@@ -1160,14 +1167,32 @@ if (shopBtn) {
     shopBtn.addEventListener('click', openShop);
 }
 
+// Restart button
+if (restartBtn) {
+    restartBtn.addEventListener('click', resetGame);
+}
+
 // Toggle shop with Q (keyCode 81)
 document.addEventListener('keydown', (e) => {
     if (e.keyCode === 81) { // Q
+        if (isDead) return; // Can't open shop when dead
         if (shopOverlay.classList.contains('open')) closeShop(); else openShop();
+    }
+    // Restart game with R or Enter when dead
+    if (isDead && (e.keyCode === 82 || e.keyCode === 13)) { // R or Enter
+        resetGame();
     }
 });
 
 function gameLoop() {
+    // Pause game loop if dead
+    if (isDead) {
+        drawGame();
+        drawParticles();
+        drawOrbiters();
+        return;
+    }
+
     updatePlayer();
     checkFoodCollision();
 
@@ -1200,7 +1225,21 @@ function gameLoop() {
     drawOrbiters();
 }
 
+function showDeathScreen() {
+    isDead = true;
+    deathScoreElement.textContent = score;
+    deathOverlay.classList.add('show');
+    deathOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function hideDeathScreen() {
+    isDead = false;
+    deathOverlay.classList.remove('show');
+    deathOverlay.setAttribute('aria-hidden', 'true');
+}
+
 function resetGame() {
+    hideDeathScreen();
     player.x = 100;
     player.y = 50;
     player.vx = 0;

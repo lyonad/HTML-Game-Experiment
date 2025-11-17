@@ -320,3 +320,97 @@ body {
     padding: 1vh 2vw;
     border-radius: 1vw;
 }
+
+/* Death Overlay */
+.death-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 100;
+    animation: fadeIn 0.3s ease;
+}
+
+.death-overlay.show {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.death-panel {
+    text-align: center;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.death-title {
+    font-size: 8vw;
+    font-weight: 700;
+    margin: 0 0 2vh 0;
+    color: #ff4444;
+    text-shadow: 0 0 20px rgba(255, 68, 68, 0.8), 0 0 40px rgba(255, 68, 68, 0.5);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+.death-score {
+    font-size: 3vw;
+    font-weight: 600;
+    margin: 2vh 0 4vh 0;
+    color: #fff;
+    opacity: 0.9;
+}
+
+.death-score span {
+    color: #ffd700;
+    font-weight: 700;
+}
+
+.restart-btn {
+    background: linear-gradient(135deg, #4a4a4a 0%, #333 100%);
+    color: #fff;
+    border: none;
+    padding: 1.5vh 4vw;
+    border-radius: 1vw;
+    font-size: 2.5vw;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.restart-btn:hover {
+    background: linear-gradient(135deg, #5a5a5a 0%, #444 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.restart-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
