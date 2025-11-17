@@ -321,6 +321,116 @@ body {
     border-radius: 1vw;
 }
 
+/* Main Menu Overlay */
+.main-menu-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(30, 30, 30, 0.95) 100%);
+    z-index: 200;
+    animation: fadeIn 0.5s ease;
+}
+
+.main-menu-overlay.hidden {
+    display: none;
+}
+
+.main-menu-panel {
+    text-align: center;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    padding: 2.5vh 4vw;
+    background: linear-gradient(135deg, rgba(50, 50, 50, 0.9) 0%, rgba(30, 30, 30, 0.9) 100%);
+    border-radius: 1.5vw;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    max-width: 450px;
+    width: 85%;
+}
+
+.game-title {
+    font-size: 4.5vw;
+    font-weight: 700;
+    margin: 0 0 2.5vh 0;
+    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+    letter-spacing: 1.5px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+    margin: 2.5vh 0;
+}
+
+.menu-btn {
+    background: linear-gradient(135deg, #4a4a4a 0%, #333 100%);
+    color: #fff;
+    border: none;
+    padding: 1.5vh 3vw;
+    border-radius: 0.8vw;
+    font-size: 2vw;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: 160px;
+    margin: 0 auto;
+}
+
+.menu-btn:hover {
+    background: linear-gradient(135deg, #5a5a5a 0%, #444 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.menu-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.start-btn {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    font-size: 2.2vw;
+    padding: 1.8vh 4vw;
+}
+
+.start-btn:hover {
+    background: linear-gradient(135deg, #5cbf60 0%, #48a04c 100%);
+}
+
+.menu-instructions {
+    margin-top: 2.5vh;
+    padding-top: 2.5vh;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.menu-instructions h3 {
+    font-size: 1.8vw;
+    margin: 0 0 1.5vh 0;
+    color: #fff;
+    font-weight: 700;
+}
+
+.menu-instructions p {
+    font-size: 1.4vw;
+    margin: 0.8vh 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+}
+
 /* Death Overlay */
 .death-overlay {
     position: absolute;

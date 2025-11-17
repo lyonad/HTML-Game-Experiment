@@ -476,6 +476,12 @@ const deathScoreElement = document.getElementById('death-score');
 const restartBtn = document.getElementById('restart-btn');
 let isDead = false;
 
+// --- Main menu logic ---
+const mainMenu = document.getElementById('main-menu');
+const startBtn = document.getElementById('start-btn');
+const menuShopBtn = document.getElementById('menu-shop-btn');
+let gameStarted = false;
+
 // Skin items replace the previous upgrade items. Each skin changes game colors.
 // Rarity: 'common', 'rare', 'epic', 'legendary'
 const shopItems = [
@@ -1155,6 +1161,10 @@ function openShop() {
 function closeShop() {
     shopOverlay.classList.remove('open');
     shopOverlay.setAttribute('aria-hidden', 'true');
+    // If game hasn't started and shop is closed, show main menu again
+    if (!gameStarted) {
+        mainMenu.classList.remove('hidden');
+    }
 }
 
 // (renderShop is defined above for category-based skins)
@@ -1174,8 +1184,15 @@ if (restartBtn) {
 
 // Toggle shop with Q (keyCode 81)
 document.addEventListener('keydown', (e) => {
+    // Start game with Enter or Space from main menu
+    if (!gameStarted && (e.keyCode === 13 || e.keyCode === 32)) { // Enter or Space
+        startGame();
+        return;
+    }
+    
     if (e.keyCode === 81) { // Q
         if (isDead) return; // Can't open shop when dead
+        if (!gameStarted) return; // Can't open shop from menu (use menu button)
         if (shopOverlay.classList.contains('open')) closeShop(); else openShop();
     }
     // Restart game with R or Enter when dead
@@ -1185,6 +1202,27 @@ document.addEventListener('keydown', (e) => {
 });
 
 function gameLoop() {
+    // Don't run game if not started
+    if (!gameStarted) {
+        // Draw background with gradient
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        const bgGradientColors = getGradientColors('background');
+        if (bgGradientColors && bgGradientColors.length > 1) {
+            const step = 1 / (bgGradientColors.length - 1);
+            for (let i = 0; i < bgGradientColors.length; i++) {
+                bgGradient.addColorStop(i * step, bgGradientColors[i]);
+            }
+        } else {
+            const rgb = parseColorToRGB(bgColor) || { r: 211, g: 211, b: 211 };
+            const darkerBg = `rgb(${Math.max(0, rgb.r - 20)}, ${Math.max(0, rgb.g - 20)}, ${Math.max(0, rgb.b - 20)})`;
+            bgGradient.addColorStop(0, bgColor);
+            bgGradient.addColorStop(1, darkerBg);
+        }
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        return;
+    }
+
     // Pause game loop if dead
     if (isDead) {
         drawGame();
@@ -1239,6 +1277,7 @@ function hideDeathScreen() {
 }
 
 function resetGame() {
+    if (!gameStarted) return; // Don't reset if game hasn't started
     hideDeathScreen();
     player.x = 100;
     player.y = 50;
@@ -1289,5 +1328,32 @@ document.addEventListener('keyup', (e) => {
     keys[e.keyCode] = false;
 });
 
-resetGame();
+// Don't start game automatically - wait for menu
+// resetGame(); // Commented out - will be called when start button is clicked
 setInterval(gameLoop, 1000 / 60); // 60 FPS
+
+// Main menu event listeners
+if (startBtn) {
+    startBtn.addEventListener('click', () => {
+        startGame();
+    });
+}
+
+if (menuShopBtn) {
+    menuShopBtn.addEventListener('click', () => {
+        mainMenu.classList.add('hidden');
+        openShop();
+    });
+}
+
+function startGame() {
+    gameStarted = true;
+    mainMenu.classList.add('hidden');
+    scoreElement.style.display = 'block';
+    shopBtn.style.display = 'block';
+    resetGame();
+}
+
+// Hide UI elements initially (will show when game starts)
+scoreElement.style.display = 'none';
+shopBtn.style.display = 'none';
