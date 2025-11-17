@@ -87,7 +87,8 @@ let player = {
     width: 24,
     height: 24,
     onGround: false,
-    rotation: 0
+    rotation: 0,
+    standingOnPlatform: null // Track which platform player is standing on
 };
 
 let foods = [];
@@ -495,21 +496,31 @@ function updatePlayer() {
     // Prevent going left beyond camera
     player.x = Math.max(player.x, camera.x);
 
-    // Update platform movement
+    // Update platform movement and move player with platform
     for (let platform of platforms) {
         if (platform.type === 'moving') {
             // Horizontal movement
+            const oldX = platform.x;
             platform.x += platform.moveSpeed * platform.direction;
             const distance = Math.abs(platform.x - platform.startX);
             if (distance >= platform.moveRange) {
                 platform.direction *= -1;
             }
+            // Move player with horizontal platform
+            if (player.standingOnPlatform === platform) {
+                player.x += platform.x - oldX;
+            }
         } else if (platform.type === 'movingVertical') {
             // Vertical movement
+            const oldY = platform.y;
             platform.y += platform.moveSpeed * platform.direction;
             const distance = Math.abs(platform.y - platform.startY);
             if (distance >= platform.moveRange) {
                 platform.direction *= -1;
+            }
+            // Move player with vertical platform
+            if (player.standingOnPlatform === platform) {
+                player.y += platform.y - oldY;
             }
         }
     }
@@ -564,22 +575,26 @@ function updatePlayer() {
 
     // Check platform collisions
     player.onGround = false;
+    player.standingOnPlatform = null;
+    
     for (let platform of platforms) {
         if (player.x < platform.x + platform.width &&
             player.x + player.width > platform.x &&
             player.y < platform.y + platform.height &&
             player.y + player.height > platform.y) {
             // Collision detected
-            if (player.vy > 0 && player.y < platform.y) {
+            if (player.vy >= 0 && player.y < platform.y) {
                 // Landing on top
                 player.y = platform.y - player.height;
                 player.vy = 0;
                 player.onGround = true;
+                player.standingOnPlatform = platform; // Track which platform we're on
                 
                 // Check if bouncy platform
                 if (platform.type === 'bouncy') {
                     player.vy = platform.bounceStrength;
                     player.onGround = false;
+                    player.standingOnPlatform = null; // Not standing on bouncy platform after bounce
                     // Spawn bounce particles
                     for (let i = 0; i < 10; i++) {
                         spawnParticle(player.x + player.width / 2, player.y + player.height,
@@ -1473,6 +1488,7 @@ function resetGame() {
     player.vy = 0;
     player.onGround = false;
     player.rotation = 0;
+    player.standingOnPlatform = null;
     camera.x = 0;
     foods = [];
     powerUps = [];
