@@ -341,7 +341,7 @@ function drawGame() {
         ctx.save();
         // Match CSS: font-size 2vw, padding 1vh/2vw, border-radius 1vw
         const fontSize = Math.max(12, Math.round(canvas.width * 0.02)); // ~2vw
-        ctx.font = `${fontSize}px Montserrat, sans-serif`;
+        ctx.font = `${fontSize}px 'Oswald', sans-serif`; // Use UI font for cheat message
         const paddingX = Math.round(canvas.width * 0.02); // 2vw
         const paddingY = Math.round(canvas.height * 0.01); // 1vh
         const textWidth = ctx.measureText(cheatMsg).width;
@@ -984,7 +984,7 @@ function renderShop() {
     shopItemsDiv.appendChild(nav);
 
     const header = document.createElement('div');
-    header.style.fontWeight = '700';
+    header.className = 'shop-category-header';
     header.style.margin = '8px 0 4px';
     const baseLabel = labelMap[category] || (category.charAt(0).toUpperCase() + category.slice(1));
     header.textContent = (category === 'points' || category === 'effects') ? baseLabel : (baseLabel + ' Skins');

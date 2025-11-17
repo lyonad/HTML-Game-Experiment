@@ -1,8 +1,37 @@
+/* Font Hierarchy System */
+:root {
+    /* Font Families - 3 Font System */
+    --font-display: Arial, sans-serif;           /* Titles, Headings, Hero Text */
+    --font-body: 'Roboto', sans-serif;            /* Body Text, Descriptions, Readable Content */
+    --font-ui: 'Oswald', sans-serif;              /* UI Elements, Buttons, Labels */
+    
+    /* Font Sizes - Responsive (vw) */
+    --font-display-xl: 6vw;      /* Main game title */
+    --font-display-lg: 4.5vw;    /* Section titles */
+    --font-display-md: 3.5vw;    /* Subsection titles */
+    --font-display-sm: 2.5vw;    /* Small headings */
+    
+    --font-body-lg: 2vw;         /* Large body text */
+    --font-body-md: 1.8vw;       /* Medium body text */
+    --font-body-sm: 1.5vw;       /* Small body text */
+    --font-body-xs: 1.2vw;       /* Extra small text */
+    
+    --font-ui-lg: 2.5vw;         /* Large UI elements */
+    --font-ui-md: 2vw;           /* Medium UI elements */
+    --font-ui-sm: 1.5vw;         /* Small UI elements */
+    --font-ui-xs: 1.2vw;         /* Extra small UI */
+    
+    /* Font Weights */
+    --weight-bold: 700;
+    --weight-semibold: 600;
+    --weight-regular: 400;
+}
+
 body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    font-family: Arial, sans-serif;
+    font-family: var(--font-body);
 }
 
 #game-canvas {
@@ -33,7 +62,7 @@ body {
     border-radius: 16px;
     padding: 20px 24px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-body);
     border: 1px solid rgba(255,255,255,0.2);
 }
 .shop-panel {
@@ -48,18 +77,27 @@ body {
 
 .shop-header h2 {
     margin: 0; /* remove default h2 top/bottom margin */
-    font-size: 1.25rem;
+    font-size: 1.5rem;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.5px;
 }
 .shop-items {
     margin-top: 12px;
     display: grid;
     grid-template-columns: 1fr;
     gap: 14px;
-}
-.shop-items {
     overflow: auto;
     max-height: 60vh;
     padding-right: 12px;
+}
+
+.shop-category-header {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+    color: #222;
 }
 
 .shop-nav {
@@ -76,9 +114,12 @@ body {
     padding: 8px 14px;
     border-radius: 6px;
     cursor: pointer;
-    font-weight: 600;
+    font-family: var(--font-ui);
+    font-weight: var(--weight-semibold);
+    font-size: 0.9rem;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    letter-spacing: 0.5px;
 }
 
 .page-btn:hover:not(:disabled) {
@@ -92,7 +133,10 @@ body {
     cursor: not-allowed;
 }
 .page-indicator {
-    font-weight: 700;
+    font-family: var(--font-ui);
+    font-weight: var(--weight-bold);
+    font-size: 1rem;
+    letter-spacing: 1px;
 }
 .shop-item {
     display: flex;
@@ -154,26 +198,31 @@ body {
 }
 
 .shop-item .meta .item-title {
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
     font-size: 15px;
     display: flex;
     align-items: center;
     gap: 8px;
+    letter-spacing: 0.3px;
 }
 
 .shop-item .meta .item-desc {
+    font-family: var(--font-body);
     font-size: 12px;
+    font-weight: var(--weight-regular);
     opacity: 0.75;
     line-height: 1.4;
 }
 
 .rarity-badge {
+    font-family: var(--font-ui);
     font-size: 10px;
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     padding: 2px 6px;
     border-radius: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .rarity-common {
@@ -233,11 +282,14 @@ body {
     padding: 8px 16px;
     border-radius: 6px;
     cursor: pointer;
-    font-weight: 600;
+    font-family: var(--font-ui);
+    font-weight: var(--weight-semibold);
     font-size: 13px;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     min-width: 80px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .buy-btn:hover:not(:disabled) {
@@ -263,12 +315,14 @@ body {
 .buy-btn.legendary {
     background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
     color: #333;
-    font-weight: 700;
+    font-weight: var(--weight-bold);
 }
 .close-btn {
     background: transparent;
     border: none;
     font-size: 18px;
+    font-family: var(--font-ui);
+    font-weight: var(--weight-bold);
     cursor: pointer;
 }
 
@@ -276,22 +330,23 @@ body {
     position: absolute;
     top: 2vh;
     left: 2vw;
-    font-size: 2vw;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
+    font-size: var(--font-ui-md);
+    font-family: var(--font-ui);
+    font-weight: var(--weight-bold);
     color: white;
     background-color: rgba(0, 0, 0, 0.5);
     padding: 1vh 2vw;
     border-radius: 1vw;
+    letter-spacing: 1px;
 }
 
 .shop-btn {
     position: absolute;
     top: 2vh;
     right: 2vw;
-    font-size: 2vw;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
+    font-size: var(--font-ui-md);
+    font-family: var(--font-ui);
+    font-weight: var(--weight-bold);
     color: white;
     background-color: rgba(0, 0, 0, 0.5);
     padding: 1vh 2vw;
@@ -299,6 +354,8 @@ body {
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .shop-btn:hover {
@@ -343,20 +400,21 @@ body {
 .main-menu-panel {
     text-align: center;
     color: white;
-    font-family: 'Montserrat', sans-serif;
-    padding: 2.5vh 4vw;
+    font-family: var(--font-body);
+    padding: 2vh 3vw;
     background: linear-gradient(135deg, rgba(50, 50, 50, 0.9) 0%, rgba(30, 30, 30, 0.9) 100%);
-    border-radius: 1.5vw;
+    border-radius: 1.2vw;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(255, 255, 255, 0.1);
-    max-width: 450px;
-    width: 85%;
+    max-width: 350px;
+    width: 80%;
 }
 
 .game-title {
-    font-size: 4.5vw;
-    font-weight: 700;
-    margin: 0 0 2.5vh 0;
+    font-size: 3.5vw;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    margin: 0 0 1.8vh 0;
     background: linear-gradient(135deg, #fff 0%, #ccc 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -368,25 +426,25 @@ body {
 .menu-buttons {
     display: flex;
     flex-direction: column;
-    gap: 1.5vh;
-    margin: 2.5vh 0;
+    gap: 1.2vh;
+    margin: 2vh 0;
 }
 
 .menu-btn {
     background: linear-gradient(135deg, #4a4a4a 0%, #333 100%);
     color: #fff;
     border: none;
-    padding: 1.5vh 3vw;
-    border-radius: 0.8vw;
-    font-size: 2vw;
-    font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
+    padding: 1.2vh 2.5vw;
+    border-radius: 0.6vw;
+    font-size: 1.6vw;
+    font-weight: var(--weight-semibold);
+    font-family: var(--font-ui);
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
-    min-width: 160px;
+    min-width: 140px;
     margin: 0 auto;
 }
 
@@ -403,8 +461,9 @@ body {
 
 .start-btn {
     background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
-    font-size: 2.2vw;
-    padding: 1.8vh 4vw;
+    font-size: 1.8vw;
+    font-weight: var(--weight-bold);
+    padding: 1.4vh 3.5vw;
 }
 
 .start-btn:hover {
@@ -412,23 +471,27 @@ body {
 }
 
 .menu-instructions {
-    margin-top: 2.5vh;
-    padding-top: 2.5vh;
+    margin-top: 2vh;
+    padding-top: 2vh;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .menu-instructions h3 {
-    font-size: 1.8vw;
-    margin: 0 0 1.5vh 0;
+    font-size: 1.4vw;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    margin: 0 0 1vh 0;
     color: #fff;
-    font-weight: 700;
+    letter-spacing: 0.3px;
 }
 
 .menu-instructions p {
-    font-size: 1.4vw;
-    margin: 0.8vh 0;
+    font-size: 1.1vw;
+    font-family: var(--font-body);
+    font-weight: var(--weight-regular);
+    margin: 0.6vh 0;
     color: rgba(255, 255, 255, 0.8);
-    font-weight: 400;
+    line-height: 1.4;
 }
 
 /* Death Overlay */
@@ -462,16 +525,18 @@ body {
 .death-panel {
     text-align: center;
     color: white;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-body);
 }
 
 .death-title {
-    font-size: 8vw;
-    font-weight: 700;
+    font-size: var(--font-display-xl);
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
     margin: 0 0 2vh 0;
     color: #ff4444;
     text-shadow: 0 0 20px rgba(255, 68, 68, 0.8), 0 0 40px rgba(255, 68, 68, 0.5);
     animation: pulse 1.5s ease-in-out infinite;
+    letter-spacing: 3px;
 }
 
 @keyframes pulse {
@@ -486,16 +551,19 @@ body {
 }
 
 .death-score {
-    font-size: 3vw;
-    font-weight: 600;
+    font-size: var(--font-display-md);
+    font-family: var(--font-body);
+    font-weight: var(--weight-semibold);
     margin: 2vh 0 4vh 0;
     color: #fff;
     opacity: 0.9;
+    letter-spacing: 0.5px;
 }
 
 .death-score span {
     color: #ffd700;
-    font-weight: 700;
+    font-weight: var(--weight-bold);
+    font-family: var(--font-display);
 }
 
 .restart-btn {
@@ -504,9 +572,9 @@ body {
     border: none;
     padding: 1.5vh 4vw;
     border-radius: 1vw;
-    font-size: 2.5vw;
-    font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
+    font-size: var(--font-ui-lg);
+    font-weight: var(--weight-bold);
+    font-family: var(--font-ui);
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
