@@ -92,7 +92,7 @@ let player = {
 
 let foods = [];
 let platforms = [
-    {x: 0, y: canvas.height - 20, width: 400, height: 20}, // initial ground
+    {x: 0, y: canvas.height - 20, width: 400, height: 20, type: 'normal'}, // initial ground
 ];
 
 let score = 0;
@@ -104,6 +104,19 @@ let cheatMsg = '';
 let cheatMsgTimer = 0; // frames remaining to display message
 let lastPlatformEnd = 400;
 
+// Game enhancement features
+let comboCount = 0;
+let comboTimer = 0;
+const COMBO_TIMEOUT = 120; // frames (2 seconds at 60fps)
+let comboMultiplier = 1;
+let screenShake = { x: 0, y: 0, intensity: 0 };
+let playerCanDoubleJump = false;
+let doubleJumpUsed = false;
+let speedBoostActive = false;
+let speedBoostTimer = 0;
+const SPEED_BOOST_DURATION = 300; // frames (5 seconds)
+let powerUps = []; // Speed boost collectibles
+
 function generatePlatform() {
     const minWidth = 80;
     const maxWidth = 150;
@@ -112,7 +125,36 @@ function generatePlatform() {
     const x = lastPlatformEnd + 50 + Math.random() * 100;
     const y = canvas.height - 150 - Math.random() * 150;
 
-    platforms.push({x, y, width, height});
+    // Determine platform type
+    const rand = Math.random();
+    let type = 'normal';
+    let props = {};
+    
+    if (rand < 0.15) {
+        // 15% chance for moving platform (horizontal)
+        type = 'moving';
+        props = {
+            moveSpeed: 1 + Math.random() * 1.5,
+            moveRange: 80 + Math.random() * 100,
+            startX: x,
+            direction: Math.random() > 0.5 ? 1 : -1
+        };
+    } else if (rand < 0.25) {
+        // 10% chance for bouncy platform
+        type = 'bouncy';
+        props = { bounceStrength: -15 };
+    } else if (rand < 0.35) {
+        // 10% chance for moving platform (vertical)
+        type = 'movingVertical';
+        props = {
+            moveSpeed: 0.5 + Math.random() * 0.8,
+            moveRange: 60 + Math.random() * 80,
+            startY: y,
+            direction: Math.random() > 0.5 ? 1 : -1
+        };
+    }
+
+    platforms.push({x, y, width, height, type, ...props});
     lastPlatformEnd = x + width;
 }
 
@@ -160,12 +202,20 @@ function drawGame() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Draw platforms with depth
-    ctx.fillStyle = platformColor; // platform color (skin)
     for (let platform of platforms) {
-        const screenX = platform.x - camera.x;
+        const screenX = platform.x - camera.x + screenShake.x;
+        const screenY = platform.y + screenShake.y;
         if (screenX + platform.width > 0 && screenX < canvas.width) {
+            // Determine platform color based on type
+            let platColor = platformColor;
+            if (platform.type === 'bouncy') {
+                platColor = '#4CAF50'; // Green for bouncy
+            } else if (platform.type === 'moving' || platform.type === 'movingVertical') {
+                platColor = '#2196F3'; // Blue for moving
+            }
+            
             // Draw platform with gradient
-            const platGradient = ctx.createLinearGradient(screenX, platform.y, screenX, platform.y + platform.height);
+            const platGradient = ctx.createLinearGradient(screenX, screenY, screenX, screenY + platform.height);
             const platGradientColors = getGradientColors('platform');
             if (platGradientColors && platGradientColors.length > 1) {
                 // Rainbow gradient
@@ -175,28 +225,63 @@ function drawGame() {
                 }
             } else {
                 // Normal gradient
-                const platRgb = parseColorToRGB(platformColor) || { r: 105, g: 105, b: 105 };
+                const platRgb = parseColorToRGB(platColor) || { r: 105, g: 105, b: 105 };
                 const lighterPlat = `rgb(${Math.min(255, platRgb.r + 30)}, ${Math.min(255, platRgb.g + 30)}, ${Math.min(255, platRgb.b + 30)})`;
                 const darkerPlat = `rgb(${Math.max(0, platRgb.r - 15)}, ${Math.max(0, platRgb.g - 15)}, ${Math.max(0, platRgb.b - 15)})`;
                 platGradient.addColorStop(0, lighterPlat);
                 platGradient.addColorStop(1, darkerPlat);
             }
             ctx.fillStyle = platGradient;
-            ctx.fillRect(screenX, platform.y, platform.width, platform.height);
+            ctx.fillRect(screenX, screenY, platform.width, platform.height);
             
             // Draw highlight on top edge
             ctx.fillStyle = `rgba(255, 255, 255, 0.15)`;
-            ctx.fillRect(screenX, platform.y, platform.width, 2);
+            ctx.fillRect(screenX, screenY, platform.width, 2);
             
             // Draw border
             ctx.strokeStyle = `rgba(0, 0, 0, 0.3)`;
             ctx.lineWidth = 1;
-            ctx.strokeRect(screenX, platform.y, platform.width, platform.height);
+            ctx.strokeRect(screenX, screenY, platform.width, platform.height);
+            
+            // Draw type indicator
+            if (platform.type === 'bouncy') {
+                // Draw bounce indicator (up arrow)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('↑', screenX + platform.width / 2, screenY - 5);
+            }
+        }
+    }
+
+    // Draw power-ups
+    for (let powerUp of powerUps) {
+        const screenX = powerUp.x - camera.x + screenShake.x;
+        const screenY = powerUp.y + screenShake.y;
+        if (screenX + 20 > 0 && screenX < canvas.width) {
+            // Draw speed boost power-up (lightning bolt)
+            ctx.save();
+            ctx.translate(screenX + 10, screenY + 10);
+            ctx.rotate(powerUp.rotation || 0);
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeStyle = '#FFA500';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, -8);
+            ctx.lineTo(-5, 0);
+            ctx.lineTo(0, 2);
+            ctx.lineTo(5, 0);
+            ctx.lineTo(0, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
         }
     }
 
     // Draw player with enhanced graphics
     ctx.save();
+    ctx.translate(screenShake.x, screenShake.y);
     const playerScreenX = player.x - camera.x;
     const playerScreenY = player.y;
     const centerX = playerScreenX + player.width / 2;
@@ -264,9 +349,26 @@ function drawGame() {
     
     ctx.restore();
 
+    // Draw combo display
+    if (comboCount > 1) {
+        ctx.save();
+        ctx.translate(screenShake.x, screenShake.y);
+        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = '#FFD700';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.textAlign = 'center';
+        const comboText = `${comboCount}x COMBO!`;
+        const comboX = canvas.width / 2;
+        const comboY = 80;
+        ctx.strokeText(comboText, comboX, comboY);
+        ctx.fillText(comboText, comboX, comboY);
+        ctx.restore();
+    }
+
     // Draw foods with enhanced graphics
     for (let food of foods) {
-        const screenX = food.x - camera.x;
+        const screenX = food.x - camera.x + screenShake.x;
         if (screenX + food.width > 0 && screenX < canvas.width) {
             const yOffset = Math.sin(food.bounceTime) * 5;
             const foodY = food.y + yOffset;
@@ -348,21 +450,37 @@ function drawGame() {
 }
 
 function updatePlayer() {
+    // Apply speed boost if active
+    const currentMoveSpeed = speedBoostActive ? moveSpeed * 1.8 : moveSpeed;
+    
     // Horizontal movement
     if (keys[37] || keys[65]) { // left arrow or A
-        player.vx = -moveSpeed;
+        player.vx = -currentMoveSpeed;
     } else if (keys[39] || keys[68]) { // right arrow or D
-        player.vx = moveSpeed;
+        player.vx = currentMoveSpeed;
     } else {
         player.vx *= friction;
     }
 
-    // Jump
+    // Jump (ground jump)
     if ((keys[38] || keys[87] || keys[32]) && player.onGround) { // up arrow, W, or space
         player.vy = jumpStrength;
         player.onGround = false;
+        doubleJumpUsed = false;
         // spawn jump effect (on jump initiation)
         spawnJumpEffect();
+    }
+    
+    // Double jump (air jump)
+    if ((keys[38] || keys[87] || keys[32]) && !player.onGround && !doubleJumpUsed && playerCanDoubleJump) {
+        player.vy = jumpStrength * 0.9; // Slightly weaker than ground jump
+        doubleJumpUsed = true;
+        spawnJumpEffect();
+        // Spawn particles for double jump
+        for (let i = 0; i < 8; i++) {
+            spawnParticle(player.x + player.width / 2, player.y + player.height, 
+                (Math.random() - 0.5) * 4, Math.random() * 2, 30, 4, '#00FFFF');
+        }
     }
 
     // Apply gravity
@@ -373,6 +491,7 @@ function updatePlayer() {
         player.rotation += 0.1; // spin speed
     } else {
         player.rotation = 0; // reset when on ground
+        doubleJumpUsed = false; // Reset double jump when landing
     }
 
     // Update position
@@ -385,12 +504,70 @@ function updatePlayer() {
     // Prevent going left beyond camera
     player.x = Math.max(player.x, camera.x);
 
+    // Update platform movement
+    for (let platform of platforms) {
+        if (platform.type === 'moving') {
+            // Horizontal movement
+            platform.x += platform.moveSpeed * platform.direction;
+            const distance = Math.abs(platform.x - platform.startX);
+            if (distance >= platform.moveRange) {
+                platform.direction *= -1;
+            }
+        } else if (platform.type === 'movingVertical') {
+            // Vertical movement
+            platform.y += platform.moveSpeed * platform.direction;
+            const distance = Math.abs(platform.y - platform.startY);
+            if (distance >= platform.moveRange) {
+                platform.direction *= -1;
+            }
+        }
+    }
+
     // Generate new platforms if needed
     while (lastPlatformEnd - camera.x < canvas.width * 2) {
         generatePlatform();
         let chance = 0.2 + Math.random() * 0.5; // 20% to 70% chance
         if (Math.random() < chance) {
             addFoodToPlatform(platforms[platforms.length - 1]);
+        }
+        // Small chance to spawn power-up
+        if (Math.random() < 0.05) {
+            const plat = platforms[platforms.length - 1];
+            powerUps.push({
+                x: plat.x + plat.width / 2 - 10,
+                y: plat.y - 30,
+                rotation: 0
+            });
+        }
+    }
+
+    // Update power-ups
+    for (let powerUp of powerUps) {
+        powerUp.rotation += 0.1;
+    }
+
+    // Check power-up collisions
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+        const powerUp = powerUps[i];
+        if (player.x < powerUp.x + 20 && player.x + player.width > powerUp.x &&
+            player.y < powerUp.y + 20 && player.y + player.height > powerUp.y) {
+            // Collect power-up
+            speedBoostActive = true;
+            speedBoostTimer = SPEED_BOOST_DURATION;
+            powerUps.splice(i, 1);
+            // Spawn collection particles
+            for (let j = 0; j < 15; j++) {
+                spawnParticle(powerUp.x + 10, powerUp.y + 10,
+                    (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, 40, 5, '#FFD700');
+            }
+        }
+    }
+
+    // Update speed boost timer
+    if (speedBoostActive) {
+        speedBoostTimer--;
+        if (speedBoostTimer <= 0) {
+            speedBoostActive = false;
         }
     }
 
@@ -407,6 +584,20 @@ function updatePlayer() {
                 player.y = platform.y - player.height;
                 player.vy = 0;
                 player.onGround = true;
+                
+                // Check if bouncy platform
+                if (platform.type === 'bouncy') {
+                    player.vy = platform.bounceStrength;
+                    player.onGround = false;
+                    // Screen shake on bouncy landing
+                    screenShake.intensity = 8;
+                    // Spawn bounce particles
+                    for (let i = 0; i < 10; i++) {
+                        spawnParticle(player.x + player.width / 2, player.y + player.height,
+                            (Math.random() - 0.5) * 4, -Math.random() * 3, 30, 4, '#4CAF50');
+                    }
+                }
+                // No screen shake for normal platforms
             } else if (player.vy < 0 && player.y + player.height > platform.y + platform.height) {
                 // Hitting from below
                 player.y = platform.y + platform.height;
@@ -420,6 +611,18 @@ function updatePlayer() {
                 player.x = platform.x + platform.width;
                 player.vx = 0;
             }
+        }
+    }
+
+    // Update screen shake
+    if (screenShake.intensity > 0) {
+        screenShake.x = (Math.random() - 0.5) * screenShake.intensity;
+        screenShake.y = (Math.random() - 0.5) * screenShake.intensity;
+        screenShake.intensity *= 0.9;
+        if (screenShake.intensity < 0.1) {
+            screenShake.intensity = 0;
+            screenShake.x = 0;
+            screenShake.y = 0;
         }
     }
 
@@ -440,10 +643,39 @@ function checkFoodCollision() {
             player.y < food.y + food.height &&
             player.y + player.height > food.y) {
             foods.splice(i, 1);
-            score += 10;
+            
+            // Combo system
+            comboTimer = COMBO_TIMEOUT;
+            comboCount++;
+            comboMultiplier = Math.min(comboCount, 10); // Cap at 10x
+            
+            const basePoints = 10;
+            const pointsEarned = basePoints * comboMultiplier;
+            score += pointsEarned;
             scoreElement.textContent = `Point: ${score}`;
+            
+            // Spawn collection particles
+            for (let j = 0; j < 12; j++) {
+                spawnParticle(food.x + food.width / 2, food.y + food.height / 2,
+                    (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, 40, 4, '#A9A9A9');
+            }
+            
+            // Enable double jump after first point
+            if (!playerCanDoubleJump) {
+                playerCanDoubleJump = true;
+            }
+            
             saveProgress();
             generateFood();
+        }
+    }
+    
+    // Update combo timer
+    if (comboTimer > 0) {
+        comboTimer--;
+        if (comboTimer <= 0) {
+            comboCount = 0;
+            comboMultiplier = 1;
         }
     }
 }
@@ -1254,10 +1486,20 @@ function resetGame() {
     player.rotation = 0;
     camera.x = 0;
     foods = [];
+    powerUps = [];
     platforms = [
-        {x: 0, y: canvas.height - 300, width: 400, height: 20},
+        {x: 0, y: canvas.height - 300, width: 400, height: 20, type: 'normal'},
     ];
     lastPlatformEnd = 400;
+    // Reset game enhancement features
+    comboCount = 0;
+    comboTimer = 0;
+    comboMultiplier = 1;
+    screenShake = { x: 0, y: 0, intensity: 0 };
+    playerCanDoubleJump = false;
+    doubleJumpUsed = false;
+    speedBoostActive = false;
+    speedBoostTimer = 0;
     // score persists across deaths
     scoreElement.textContent = `Point: ${score}`;
     for (let i = 0; i < 5; i++) {
