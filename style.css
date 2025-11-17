@@ -326,6 +326,23 @@ body {
     cursor: pointer;
 }
 
+#distance {
+    position: fixed;
+    top: 2vh;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    padding: 1vh 2vw;
+    border-radius: 1vw;
+    font-size: var(--font-ui-md);
+    font-family: var(--font-ui);
+    font-weight: var(--weight-bold);
+    z-index: 100;
+    display: none;
+    pointer-events: none;
+}
+
 #score {
     position: absolute;
     top: 2vh;

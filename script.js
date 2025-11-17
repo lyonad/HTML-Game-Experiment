@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
+const distanceElement = document.getElementById('distance');
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -97,6 +98,7 @@ let platforms = [
 ];
 
 let score = 0;
+let distanceTraveled = 0; // Distance in meters
 let keys = {};
 // Cheat code input buffer
 let cheatBuffer = '';
@@ -492,7 +494,16 @@ function updatePlayer() {
     player.y += player.vy;
 
     // Update camera to follow player
+    const oldCameraX = camera.x;
     camera.x = Math.max(camera.x, Math.max(0, player.x - canvas.width * 0.25));
+
+    // Update distance traveled based on camera movement
+    if (camera.x > oldCameraX) {
+        distanceTraveled += (camera.x - oldCameraX) / 10; // Convert pixels to meters (roughly)
+        if (distanceElement) {
+            distanceElement.textContent = `Distance: ${Math.floor(distanceTraveled)}m`;
+        }
+    }
 
     // Prevent going left beyond camera
     player.x = Math.max(player.x, camera.x);
@@ -1518,6 +1529,8 @@ function resetGame() {
     player.rotation = 0;
     player.standingOnPlatform = null;
     camera.x = 0;
+    distanceTraveled = 0;
+    if (distanceElement) distanceElement.textContent = 'Distance: 0m';
     foods = [];
     powerUps = [];
     platforms = [
@@ -1593,9 +1606,11 @@ function startGame() {
     mainMenu.classList.add('hidden');
     scoreElement.style.display = 'block';
     shopBtn.style.display = 'block';
+    if (distanceElement) distanceElement.style.display = 'block';
     resetGame();
 }
 
 // Hide UI elements initially (will show when game starts)
 scoreElement.style.display = 'none';
 shopBtn.style.display = 'none';
+if (distanceElement) distanceElement.style.display = 'none';
