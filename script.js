@@ -1510,6 +1510,9 @@ function showDeathScreen() {
     deathScoreElement.textContent = score;
     deathOverlay.classList.add('show');
     deathOverlay.setAttribute('aria-hidden', 'false');
+    // Reset distance when player dies
+    distanceTraveled = 0;
+    if (distanceElement) distanceElement.textContent = 'Distance: 0m';
 }
 
 function hideDeathScreen() {
