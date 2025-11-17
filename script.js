@@ -277,18 +277,9 @@ function drawGame() {
             
             // Draw food glow
             const foodRgb = parseColorToRGB(foodColor) || { r: 169, g: 169, b: 169 };
-            const foodGradientColors = getGradientColors('points');
             const glowGrad = ctx.createRadialGradient(foodCenterX, foodCenterY, 0, foodCenterX, foodCenterY, food.width * 0.8);
-            if (foodGradientColors && foodGradientColors.length > 1) {
-                // Use first and middle colors of rainbow for glow
-                const firstColor = parseColorToRGB(foodGradientColors[0]) || { r: 255, g: 0, b: 0 };
-                const midColor = parseColorToRGB(foodGradientColors[Math.floor(foodGradientColors.length / 2)]) || { r: 255, g: 255, b: 0 };
-                glowGrad.addColorStop(0, `rgba(${firstColor.r}, ${firstColor.g}, ${firstColor.b}, 0.6)`);
-                glowGrad.addColorStop(1, `rgba(${midColor.r}, ${midColor.g}, ${midColor.b}, 0)`);
-            } else {
-                glowGrad.addColorStop(0, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0.6)`);
-                glowGrad.addColorStop(1, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0)`);
-            }
+            glowGrad.addColorStop(0, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0.6)`);
+            glowGrad.addColorStop(1, `rgba(${foodRgb.r}, ${foodRgb.g}, ${foodRgb.b}, 0)`);
             ctx.fillStyle = glowGrad;
             ctx.fillRect(screenX - 3, foodY - 3, food.width + 6, food.height + 6);
             
@@ -301,19 +292,11 @@ function drawGame() {
                 foodCenterY, 
                 food.width * 0.7
             );
-            if (foodGradientColors && foodGradientColors.length > 1) {
-                // Rainbow gradient - use all colors in a radial pattern
-                const step = 1 / (foodGradientColors.length - 1);
-                for (let i = 0; i < foodGradientColors.length; i++) {
-                    foodGradient.addColorStop(i * step, foodGradientColors[i]);
-                }
-            } else {
-                // Normal gradient
-                const lighterFood = `rgb(${Math.min(255, foodRgb.r + 50)}, ${Math.min(255, foodRgb.g + 50)}, ${Math.min(255, foodRgb.b + 50)})`;
-                const darkerFood = `rgb(${Math.max(0, foodRgb.r - 10)}, ${Math.max(0, foodRgb.g - 10)}, ${Math.max(0, foodRgb.b - 10)})`;
-                foodGradient.addColorStop(0, lighterFood);
-                foodGradient.addColorStop(1, darkerFood);
-            }
+            // Normal gradient using default food color
+            const lighterFood = `rgb(${Math.min(255, foodRgb.r + 50)}, ${Math.min(255, foodRgb.g + 50)}, ${Math.min(255, foodRgb.b + 50)})`;
+            const darkerFood = `rgb(${Math.max(0, foodRgb.r - 10)}, ${Math.max(0, foodRgb.g - 10)}, ${Math.max(0, foodRgb.b - 10)})`;
+            foodGradient.addColorStop(0, lighterFood);
+            foodGradient.addColorStop(1, darkerFood);
             ctx.fillStyle = foodGradient;
             ctx.beginPath();
             ctx.arc(foodCenterX, foodCenterY, food.width / 2, 0, Math.PI * 2);
@@ -522,19 +505,7 @@ const shopItems = [
     { id: 'plat_gold', type: 'platform', name: 'Golden', desc: 'Luxurious gold platforms', price: 400, purchased: false, color: '#d4af37', rarity: 'legendary' }
 ];
 
-// Point/item color skins
-shopItems.push(
-    { id: 'pt_classic', type: 'points', name: 'Classic', desc: 'Default point color', price: 0, purchased: true, color: '#A9A9A9', rarity: 'common' },
-    { id: 'pt_yellow', type: 'points', name: 'Sunshine', desc: 'Bright golden yellow', price: 80, purchased: false, color: '#ffd54f', rarity: 'common' },
-    { id: 'pt_orange', type: 'points', name: 'Flame', desc: 'Burning orange fire', price: 120, purchased: false, color: '#ff8a65', rarity: 'rare' },
-    { id: 'pt_pink', type: 'points', name: 'Cherry Blossom', desc: 'Delicate pink petals', price: 140, purchased: false, color: '#ff6bcb', rarity: 'rare' },
-    { id: 'pt_cyan', type: 'points', name: 'Aqua', desc: 'Cool ocean cyan', price: 160, purchased: false, color: '#4dd0e1', rarity: 'rare' },
-    { id: 'pt_lime', type: 'points', name: 'Lime Zest', desc: 'Electric lime green', price: 180, purchased: false, color: '#cfff04', rarity: 'rare' },
-    { id: 'pt_neon', type: 'points', name: 'Neon Pulse', desc: 'Glowing neon green', price: 220, purchased: false, color: '#39ff14', rarity: 'epic' },
-    { id: 'pt_plasma', type: 'points', name: 'Plasma', desc: 'Magical plasma energy', price: 280, purchased: false, color: '#ff0080', rarity: 'epic' },
-    { id: 'pt_rainbow', type: 'points', name: 'Rainbow Shard', desc: 'Prismatic rainbow', price: 350, purchased: false, color: '#ff0000', rarity: 'legendary', gradient: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'] },
-    { id: 'pt_gold', type: 'points', name: 'Midas Touch', desc: 'Legendary pure gold', price: 400, purchased: false, color: '#ffd166', rarity: 'legendary' }
-);
+// Point/item color skins removed - using default color only
 
 // Effects are added below via a normalization IIFE (run/jump-only set)
 
@@ -567,9 +538,6 @@ const selectedSkins = {
     background: 'bg_classic',
     platform: 'plat_classic'
 };
-
-// add default selection for point colors
-selectedSkins.points = 'pt_classic';
 
 // Selected visual effects (by type)
 // Only 'run' (moving on ground) and 'jump' are supported now.
@@ -616,7 +584,8 @@ function loadProgress() {
             if (data.colors.playerColor) playerColor = data.colors.playerColor;
             if (data.colors.platformColor) platformColor = data.colors.platformColor;
             if (data.colors.bgColor) bgColor = data.colors.bgColor;
-            if (data.colors.foodColor) foodColor = data.colors.foodColor;
+            // foodColor always uses default - not customizable
+            foodColor = '#A9A9A9';
         }
             if (data.selectedEffects) {
                 // backward compatibility: map old 'idle' to new 'run'
@@ -645,7 +614,7 @@ function applySkinByCategory(category, color) {
     if (category === 'player') playerColor = color;
     if (category === 'background') bgColor = color;
     if (category === 'platform') platformColor = color;
-    if (category === 'points') foodColor = color;
+    // Points color removed - always uses default
 }
 
 // --- Simple particle system for effects ---
@@ -950,7 +919,7 @@ function maybeSpawnAirEffect() {
 
 function renderShop() {
     shopItemsDiv.innerHTML = '';
-    const categories = ['player', 'background', 'platform', 'points', 'effects'];
+    const categories = ['player', 'background', 'platform', 'effects'];
     // pagination: show one category per page
     const category = categories[currentShopPage] || categories[0];
 
@@ -958,7 +927,6 @@ function renderShop() {
         player: 'Player',
         background: 'Background',
         platform: 'Platform',
-        points: 'Point Color',
         effects: 'Effects'
     };
 
@@ -987,7 +955,7 @@ function renderShop() {
     header.className = 'shop-category-header';
     header.style.margin = '8px 0 4px';
     const baseLabel = labelMap[category] || (category.charAt(0).toUpperCase() + category.slice(1));
-    header.textContent = (category === 'points' || category === 'effects') ? baseLabel : (baseLabel + ' Skins');
+    header.textContent = (category === 'effects') ? baseLabel : (baseLabel + ' Skins');
     shopItemsDiv.appendChild(header);
 
     // Show items sorted by price (cheapest → most expensive)
@@ -1004,8 +972,7 @@ function renderShop() {
         
         // Determine selected state
         let isSelected = false;
-        if (category === 'points') isSelected = selectedSkins.points === item.id;
-        else if (category === 'effects') {
+        if (category === 'effects') {
             isSelected = selectedEffects.run === item.id || selectedEffects.jump === item.id;
         } else {
             isSelected = selectedSkins[category] === item.id;
