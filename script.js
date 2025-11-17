@@ -242,15 +242,6 @@ function drawGame() {
             ctx.strokeStyle = `rgba(0, 0, 0, 0.3)`;
             ctx.lineWidth = 1;
             ctx.strokeRect(screenX, screenY, platform.width, platform.height);
-            
-            // Draw type indicator
-            if (platform.type === 'bouncy') {
-                // Draw bounce indicator (up arrow)
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('↑', screenX + platform.width / 2, screenY - 5);
-            }
         }
     }
 
@@ -589,8 +580,6 @@ function updatePlayer() {
                 if (platform.type === 'bouncy') {
                     player.vy = platform.bounceStrength;
                     player.onGround = false;
-                    // Screen shake on bouncy landing
-                    screenShake.intensity = 8;
                     // Spawn bounce particles
                     for (let i = 0; i < 10; i++) {
                         spawnParticle(player.x + player.width / 2, player.y + player.height,
