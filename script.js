@@ -355,7 +355,7 @@ function drawGame() {
         ctx.textAlign = 'center';
         const comboText = `${comboCount}x COMBO!`;
         const comboX = canvas.width / 2;
-        const comboY = 80;
+        const comboY = canvas.height - 40; // Bottom center
         ctx.strokeText(comboText, comboX, comboY);
         ctx.fillText(comboText, comboX, comboY);
         ctx.restore();
